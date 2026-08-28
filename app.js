@@ -111,6 +111,14 @@ formCliente.addEventListener("submit", async function(evento) {
   */
   if (error) {
     mensagem.textContent = "Erro ao salvar cliente: " + error.message;
+    mensagem.className = "erro"; // Adiciona a cor vermelha
+    
+    // Faz a mensagem de erro sumir após 5 segundos também (opcional)
+    setTimeout(() => {
+        mensagem.textContent = "";
+        mensagem.className = "";
+    }, 5000);
+    
     return;
   }
 
@@ -118,9 +126,21 @@ formCliente.addEventListener("submit", async function(evento) {
     Se chegou até aqui, significa que o registro foi salvo com sucesso.
   */
   mensagem.textContent = "Cliente salvo com sucesso!";
+  mensagem.className = "sucesso"; // Adiciona a cor verde
 
   /*
     Limpamos o formulário depois de salvar.
   */
   formCliente.reset();
-});
+
+  /*
+    =====================================================
+    NOVO CÓDIGO: FAZ A MENSAGEM SUMIR APÓS 5 SEGUNDOS
+    =====================================================
+  */
+  setTimeout(() => {
+      mensagem.textContent = ""; // Apaga o texto
+      mensagem.className = "";   // Remove a classe de cor
+  }, 5000);
+
+}); // <- Fechamento do formCliente.addEventListener

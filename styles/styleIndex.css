@@ -9,7 +9,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f7f9;
+    background-color: #cce4d0;
     color: #333;
     display: flex;
     flex-direction: column;
@@ -114,4 +114,11 @@ button[type="submit"]:active {
     font-size: 15px;
     text-align: center;
     min-height: 20px; /* Evita que a tela pule quando a mensagem aparecer */
+}
+.sucesso {
+    color: #155f34;
+}
+
+.erro {
+    color: #882e24;
 }
