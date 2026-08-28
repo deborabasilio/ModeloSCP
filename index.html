@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <!-- Define a codificação da página para aceitar acentos -->
+  <meta charset="UTF-8">
+
+  <!-- Faz a página se adaptar melhor em celulares e computadores -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Título que aparece na aba do navegador -->
+  <title>MVP - Cadastro de Cliente</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Título principal da página -->
+  <h1>Cadastro de Cliente</h1>
+
+  <!-- 
+    Formulário de cadastro de cliente.
+    O ID "formCliente" será usado no JavaScript para capturar o envio.
+  -->
+  <form id="formCliente">
+
+    <!-- 
+      Campo TIPO_CLIENTE.
+      No banco é CHAR(1), então salvamos apenas uma letra:
+      F = Pessoa Física
+      J = Pessoa Jurídica
+    -->
+    <label for="tipoCliente">Tipo de Cliente:</label>
+    <select id="tipoCliente" required>
+      <option value="">Selecione</option>
+      <option value="F">Pessoa Física</option>
+      <option value="J">Pessoa Jurídica</option>
+    </select>
+
+    <br><br>
+
+    <!-- 
+      Campo CPF_CNPJ_CLIENTE.
+      No banco é VARCHAR(18), então limitamos a 18 caracteres.
+    -->
+    <label for="cpfCnpjCliente">CPF / CNPJ:</label>
+    <input
+      type="text"
+      id="cpfCnpjCliente"
+      maxlength="18"
+      required
+    >
+
+    <br><br>
+
+    <!-- 
+      Campo NOME_CLIENTE.
+      No banco é VARCHAR(100), então limitamos a 100 caracteres.
+    -->
+    <label for="nomeCliente">Nome do Cliente:</label>
+    <input
+      type="text"
+      id="nomeCliente"
+      maxlength="100"
+      required
+    >
+
+    <br><br>
+
+    <!-- Botão que envia o formulário -->
+    <button type="submit">Salvar</button>
+
+  </form>
+
+  <!-- 
+    Área onde vamos mostrar mensagens para o usuário,
+    como sucesso ou erro.
+  -->
+  <p id="mensagem"></p>
+
+  <!-- 
+    Biblioteca JavaScript do Supabase.
+    Ela precisa vir antes do app.js, porque o app.js usa o Supabase.
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Nosso arquivo JavaScript separado -->
+  <script src="app.js"></script>
+
+</body>
+</html>
