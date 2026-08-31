@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login de Usuário</title>
+    <link rel="stylesheet" href="styles/styleUser.css" />
+  </head>
+
+  <body>
+    <h1>Login do usuário</h1>
+
+    <form id="formUser">
+      <label for="tipoUser">Tipo de acesso:</label>
+      <select id="tipoUser" required>
+        <option value="">Selecione</option>
+        <option value="ADMIN">Acesso Administrador</option>
+        <option value="PADRAO">Acesso Padrão</option>
+      </select>
+
+      <!-- Campo usado para digitar o nome de usuário. -->
+      <label for="UserNome">Usuário:</label>
+      <input
+        type="text"
+        id="UserNome"
+        maxlength="18"
+        placeholder="Digite seu usuário"
+        autocomplete="username"
+        required
+      />
+
+      <!-- Campo password esconde a senha enquanto ela é digitada. -->
+      <label for="UserSenha">Senha:</label>
+      <input
+        type="password"
+        id="UserSenha"
+        maxlength="20"
+        placeholder="Digite sua senha"
+        autocomplete="current-password"
+        required
+      />
+
+      <button type="submit">Entrar</button>
+    </form>
+
+    <!-- Espaço onde o JavaScript mostra mensagens de erro ou sucesso. -->
+    <p id="mensagem" aria-live="polite"></p>
+
+    <!-- A biblioteca deve vir antes do arquivo user.js. -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/user.js"></script>
+  </body>
+</html>

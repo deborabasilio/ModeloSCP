@@ -1,0 +1,24 @@
+/* Container do menu */
+.menu-principal ul {
+  display: flex;             /* Alinha os itens lado a lado na horizontal */
+  justify-content: center;   /* Centraliza o menu (use 'flex-start' para alinhar à esquerda) */
+  list-style-type: none;     /* Remove as bolinhas da lista */
+  margin: 0;
+  padding: 0;
+  background-color: #2c3e50; /* Cor de fundo da barra */
+}
+
+/* Estilo dos links (os botões clicáveis) */
+.menu-principal a {
+  display: block;            /* Torna toda a área clicável, não só o texto */
+  color: #ffffff;            /* Cor da fonte */
+  text-decoration: none;     /* Remove o sublinhado padrão dos links */
+  padding: 16px 24px;        /* Espaçamento interno (topo/baixo e laterais) */
+  font-family: sans-serif;
+  transition: 0.3s;          /* Deixa a mudança de cor suave */
+}
+
+/* Efeito ao passar o mouse por cima (Hover) */
+.menu-principal a:hover {
+  background-color: #34495e; /* Muda a cor de fundo */
+}

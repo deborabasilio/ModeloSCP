@@ -1,0 +1,92 @@
+/* Faz com que largura e espaçamento dos elementos sejam calculados corretamente. */
+* {
+  box-sizing: border-box;
+}
+
+/* Centraliza o formulário na página e define as cores de fundo. */
+body {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  margin: 0;
+  padding: 24px;
+  font-family: Arial, sans-serif;
+  background: #eef2f6;
+  color: #1f2937;
+}
+
+h1,
+#formUser,
+#mensagem {
+  width: min(100%, 400px);
+}
+
+h1 {
+  margin: 0 0 18px;
+  text-align: center;
+}
+
+/* Caixa branca que envolve os campos de login. */
+#formUser {
+  padding: 28px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 12px 30px #00000018;
+}
+
+/* Faz os campos ocuparem uma linha inteira no formulário. */
+label,
+input,
+select,
+/* Cor e aparência do botão de entrar. */
+button {
+  display: block;
+  width: 100%;
+}
+
+label {
+  margin-bottom: 7px;
+  font-weight: bold;
+}
+
+input,
+select,
+button {
+  padding: 11px;
+  margin-bottom: 16px;
+  border-radius: 7px;
+  font: inherit;
+}
+
+input,
+select {
+  border: 1px solid #b9c3cf;
+}
+
+button {
+  border: 0;
+  background: #2563eb;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+/* Área usada para mostrar mensagens de erro ou sucesso. */
+#mensagem {
+  min-height: 24px;
+  margin: 18px 0 0;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.erro {
+  color: #b42318;
+}
+
+.sucesso {
+  color: #16753d;
+}
