@@ -3,16 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Produtos</title>
+    <link rel="stylesheet" href="styles/admin.css">
 </head>
 <body>
-    <!-- Código do produto. 
-     • Categoria do produto. 
-     • Descrição. 
-     • Observação. 
-     • Valor de venda. 
-     • Data de cadastro. 
-     • Status: Ativo ou Inativo. -->
+    <header class="page-header"><h1>Produtos</h1><p>Cadastre e mantenha o catálogo comercial.</p></header>
+    <div class="produtos">
+        <form id="formProdutos">
+            <label for="idProd">Código do Produto:</label><!--aqui deve mostar o codigo que vai gerar no banco desse produto-->
+            <input type="text" readonly>
+
+            <label for="catProd">Categoria do Produto:</label>
+            <select id="catProd" required>
+                <option value="" disabled selected>Selecione</option>
+                <option></option> <!--aqui deve buscar as categorias do banco-->
+            </select>
+
+            <label for="descProd">Descrição do Produto:</label>
+            <input type="text" id="descProd" required>
+
+            <label for="obsProd">Observação:</label>
+            <textarea id="obsProd" required></textarea>
+
+            <label for="valorVenda">Valor de Venda:</label>
+            <input type="number" id="valorVenda" required>
+
+            <label for="dataCadastroProd">Data de cadastro:</label><!--gerar automaticamente com data e horario que finalizar-->
+            <input type="datetime" required readonly>
+
+            <label for="statusProd">Status do Produto:</label>
+            <select id="statusProd" required>
+                <option value="" disabled selected>Selecione</option>
+                <option value="ATIVO">Ativo</option>
+                <option value="INATIVO">Inativo</option>
+            </select>
+            <button type="submit" id="botao">Salvar Produto</button>
+        </form>
+
+    </div>
+
 
      <!--Não salvar sem categoria. 
      • Não salvar sem descrição. 
@@ -21,5 +50,7 @@
      • Editar deve carregar dados no
 formulário. 
 Na listagem, exibir botões Editar e excluir -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/produtos.js"></script>
 </body>
 </html>

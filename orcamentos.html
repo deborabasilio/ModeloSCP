@@ -1,11 +1,54 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Orçamentos</title>
+    <link rel="stylesheet" href="styles/admin.css" />
+  </head>
+  <body>
+    <header class="page-header"><h1>Orçamentos</h1><p>Crie e acompanhe propostas comerciais.</p></header>
+    <div class="container">
+      <form id="formOrcamento">
+        <label for="codigoOrcamento">Código do Orçamento:</label
+        ><!--gera automaticamente buscando no banco-->
+        <input type="text" readonly />
+
+        <label for="clienteSelec">Cliente selecionado:</label>
+        <select id="clienteSelec" required>
+          <option value="" disabled selected>Selecione</option>
+          <option value=""></option>
+          <!--busca os clientes cadastrados no banco-->
+        </select>
+        <label for="dataOrcamento">Data do Orçamento:</label>
+        <!--gera automaticamente a data e hora-->
+        <input type="datetime" readonly required />
+
+        <label for="validadeOrcamento">Data de Validade:</label>
+        <input type="date" required />
+
+        <label for="valorTotal">Valor Total:</label>
+        <!--aqui entra a função para calcular total do orçamento-->
+
+        <h3>Itens do Orçamento</h3>
+
+        <label for="produtoOrc">Produto(s):</label>
+        <input> <!--aqui seleciona produtos-->
+
+        <label for="descProdutoOrc">Descrição:</label>
+        <input> <!--aqui seleciona descricao do produto-->
+
+        <label for="qtdeProdutoOrc">Quantidade:</label>
+        <input> <!--aqui seleciona quantidade-->
+
+        <label for="valorUnitario">Valor Unitário:</label>
+        <input> <!--aqui seleciona valor item-->
+
+        <label for="valorTotal">Valor Total:</label>
+        <input> <!--aqui entra total da qtde de itens-->
+        <button type="submit">Salvar Orçamento</button>
+      </form>
+    </div>
     <!--Codigo do orçamento
     Cliente selecionado
     Data do orçamento
@@ -15,7 +58,7 @@
     <!--itens do orcamento
     produto
     descricao do produto
-    quantiodade
+    quantidade
     valor unitario
     valor total do item
     
@@ -37,5 +80,7 @@ Exemplo
 • Somar todos os itens para obter o total geral
 
 a alteraçao ou remoçao do item deve recalcular o valor total-->
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/orcamentos.js"></script>
+  </body>
 </html>

@@ -4,18 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login de Usuário</title>
-    <link rel="stylesheet" href="styles/styleUser.css" />
+    <link rel="stylesheet" href="styles/login.css" />
   </head>
 
   <body>
-    <h1>Login do usuário</h1>
+    <h1>
+      <img
+        class="company-logo"
+        src="assets/logo-giro-pneus.jpg"
+        alt="Giro Pneus — Soluções em Pneus"
+      />
+      Login do usuário
+    </h1>
 
     <form id="formUser">
       <label for="tipoUser">Tipo de acesso:</label>
       <select id="tipoUser" required>
         <option value="">Selecione</option>
-        <option value="ADMIN">Acesso Administrador</option>
-        <option value="PADRAO">Acesso Padrão</option>
+        <option value="ADMIN">Acesso Administrador</option><!--admin deve ter todas as funções do sistema-->
+        <option value="PADRAO">Acesso Padrão</option><!--acesso padrao tem funcionalidade limitada, nao pode excluir nem editar, mas pode cadastrar e ver-->
       </select>
 
       <!-- Campo usado para digitar o nome de usuário. -->
@@ -46,8 +53,8 @@
     <!-- Espaço onde o JavaScript mostra mensagens de erro ou sucesso. -->
     <p id="mensagem" aria-live="polite"></p>
 
-    <!-- A biblioteca deve vir antes do arquivo user.js. -->
+    <!-- A biblioteca deve vir antes do arquivo login.js. -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="scripts/user.js"></script>
+    <script src="scripts/login.js"></script>
   </body>
 </html>

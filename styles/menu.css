@@ -1,0 +1,203 @@
+/* Container do menu (Nav) */
+.menu-principal {
+  background-color: #2c3e50; /* Cor de fundo da barra */
+  height: 80px; /* Altura do nav */
+}
+
+/* Flexbox do menu */
+.menu-principal ul {
+  display: flex;
+  align-items: center; /* Centraliza verticalmente a imagem e os links */
+  justify-content: flex-start; /* Alinha tudo à esquerda por padrão */
+  list-style-type: none; /* Remove as bolinhas do li */
+  margin: 0;
+  padding: 0 20px; /* Dá um respiro nas laterais */
+  height: 100%;
+}
+
+/* Espaçamento entre o logotipo e o primeiro item do menu */
+.company-logo {
+  margin-right: 30px; /* Mantém os outros menus próximos à imagem */
+}
+
+/* Ajusta o tamanho da imagem e aplica bordas arredondadas */
+.company-logo img {
+  max-height: 50px; /* Ajuste conforme o tamanho do seu nav */
+  display: block; /* Remove o pequeno espaço fantasma abaixo da imagem */
+  border-radius: 8px; /* Bordas arredondadas na logo */
+}
+
+/* Estilo dos links (os botões clicáveis) */
+.menu-principal a {
+  display: block; /* Torna toda a área clicável */
+  color: #ffffff; /* Cor da fonte */
+  text-decoration: none; /* Remove o sublinhado padrão */
+  padding: 16px 24px; /* Espaçamento interno (topo/baixo e laterais) */
+  font-family: sans-serif;
+  transition: 0.3s; /* Deixa a mudança de cor suave */
+}
+
+/* Efeito ao passar o mouse por cima (Hover) */
+.menu-principal a:hover {
+  background-color: #34495e; /* Muda a cor de fundo */
+}
+
+/* =========================================
+   NOVO: Estilos do Menu Dropdown (Submenu)
+   ========================================= */
+
+/* Transforma o item principal em uma "âncora" para o submenu */
+.dropdown {
+  position: relative;
+}
+
+/* Estilo do submenu oculto por padrão */
+.menu-principal .dropdown-content {
+  display: none;               
+  position: absolute;          
+  background-color: #2c3e50;   
+  min-width: 180px;            
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.3); 
+  z-index: 100;                
+  padding: 0;                  
+  flex-direction: column;      
+  border-radius: 0 0 8px 8px;  
+  overflow: hidden;
+  top: 100%;
+  
+  /* AS DUAS LINHAS DE CORREÇÃO ESTÃO AQUI: */
+  height: auto;         /* Cancela a altura limite e permite mostrar todos os botões */
+  align-items: stretch; /* Garante que os botões preencham toda a largura do submenu */
+}
+
+/* Ajustes visuais para os links de dentro do submenu */
+.dropdown-content a {
+  padding: 14px 20px;
+  font-size: 15px;
+  white-space: nowrap;
+  border-bottom: 1px solid #34495e;
+}
+
+/* Remove a linha da última opção */
+.dropdown-content li:last-child a {
+  border-bottom: none;
+}
+
+/* Efeito ao passar o mouse nas opções do submenu */
+.dropdown-content a:hover {
+  background-color: #1a252f;
+}
+
+/* Classe ativada pelo JAVASCRIPT para mostrar o menu */
+.mostrar-dropdown {
+  display: flex !important;
+}
+
+/* =========================================
+   Empurra o Sair para a direita
+   ========================================= */
+/* O sinal ">" garante que só o "Sair" vá para a direita, ignorando os itens do submenu */
+.menu-principal > ul > li:last-child {
+  margin-left: auto;
+}
+
+/* =========================================
+   ESTILOS DA ÁREA DE PESQUISA E TABELA
+   ========================================= */
+
+/* NOVO: Esconde a área de pesquisa e tabela quando a página carrega */
+#area-pesquisa {
+  display: none;
+}
+
+/* Dá um respiro e centraliza o conteúdo abaixo do menu */
+.conteudo-pagina {
+  max-width: 1000px;
+  margin: 40px auto;
+  padding: 0 20px;
+  font-family: sans-serif;
+}
+
+/* Alinha o título e a barra de busca lado a lado */
+.cabecalho-pesquisa {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.cabecalho-pesquisa h2 {
+  color: #2c3e50;
+  margin: 0;
+}
+
+/* Estilo do campo de busca e botão */
+.barra-busca {
+  display: flex;
+  gap: 10px;
+}
+
+.barra-busca input {
+  padding: 10px 15px;
+  width: 300px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.btn-buscar {
+  background-color: #2c3e50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-buscar:hover {
+  background-color: #34495e;
+}
+
+/* Estilo da Tabela de Clientes */
+.tabela-clientes {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden; /* Mantém as bordas arredondadas na tabela */
+}
+
+.tabela-clientes th,
+.tabela-clientes td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid #eeeeee;
+}
+
+/* Cor do cabeçalho da tabela */
+.tabela-clientes th {
+  background-color: #f8f9fa;
+  color: #2c3e50;
+  font-weight: bold;
+}
+
+/* Efeito ao passar o mouse nas linhas da tabela */
+.tabela-clientes tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+/* Botão de editar dentro da tabela */
+.btn-editar {
+  background-color: #f39c12;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-editar:hover {
+  background-color: #e67e22;
+}

@@ -1,26 +1,80 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Menu Principal</title>
-    <link rel="stylesheet" href="styles/styleMenu.css">
-</head>
-<body>
-    <nav class="menu-principal">
-  <ul>
-    <li><a href="clientes.html" target="_blank">Clientes</a></li>
-    <li><a href="catProdutos.html" target="_blank">Categorias de Produtos</a></li>
-    <li><a href="produtos.html" target="_blank">Produtos</a></li>
-    <li><a href="orcamentos.html" target="_blank">Orçamentos</a></li>
-    <li><a href="user.html">Voltar</a></li>
-  </ul>
-</nav>
-    <!-- Ter um menu horizontal em cima com campo para:
-     Clientes
-     Categorias
-     Produtos
-     Orçamentos
-     Sair(volta para a pagina de login) -->
-</body>
+    <link rel="stylesheet" href="styles/menu.css" />
+  </head>
+  <body>
+      <nav class="menu-principal">
+        <ul>
+          <li class="company-logo">
+            <img src="assets/logo-giro-pneus.jpg" alt="Giro Pneus" />
+          </li>
+
+          <!-- MENU CLIENTES -->
+          <li class="dropdown">
+            <a href="#" class="dropbtn" id="btn-clientes">Clientes ▾</a>
+            <ul class="dropdown-content" id="dropdown-clientes">
+              <li><a href="cadastrocliente.html" target="_blank">Cadastrar</a></li>
+              <li><a href="#" id="pesq-clientes">Pesquisar</a></li>
+            </ul>
+          </li>
+
+          <!-- MENU CATEGORIAS -->
+          <li class="dropdown">
+            <a href="#" class="dropbtn" id="btn-categorias">Categorias ▾</a>
+            <ul class="dropdown-content" id="dropdown-categorias">
+              <li><a href="categoriaprodutos.html" target="_blank">Cadastrar</a></li>
+              <li><a href="#" id="pesq-categorias">Pesquisar</a></li>
+            </ul>
+          </li>
+
+          <!-- MENU PRODUTOS -->
+          <li class="dropdown">
+            <a href="#" class="dropbtn" id="btn-produtos">Produtos ▾</a>
+            <ul class="dropdown-content" id="dropdown-produtos">
+              <li><a href="produtos.html" target="_blank">Cadastrar</a></li>
+              <li><a href="#" id="pesq-produtos">Pesquisar</a></li>
+            </ul>
+          </li>
+
+          <!-- MENU ORÇAMENTOS -->
+          <li class="dropdown">
+            <a href="#" class="dropbtn" id="btn-orcamentos">Orçamentos ▾</a>
+            <ul class="dropdown-content" id="dropdown-orcamentos">
+              <li><a href="orcamentos.html" target="_blank">Cadastrar</a></li>
+              <li><a href="#" id="pesq-orcamentos">Pesquisar</a></li>
+            </ul>
+          </li>
+
+          <li><a class="logout" href="login.html">Sair</a></li>
+        </ul>
+      </nav>
+
+      <!-- ÁREA DE PESQUISA (Usada para todas as tabelas) -->
+      <main id="area-pesquisa" class="conteudo-pagina">
+        <div class="cabecalho-pesquisa">
+            <h2 id="titulo-pesquisa">Pesquisa</h2>
+            <!-- Barra de busca (opcional para o futuro) -->
+            <div class="barra-busca">
+                <input type="text" placeholder="Buscar...">
+                <button type="button" class="btn-buscar">Pesquisar</button>
+            </div>
+        </div>
+
+        <table class="tabela-clientes">
+            <thead id="tabela-cabecalho">
+                <!-- O JavaScript vai preencher os títulos das colunas aqui -->
+            </thead>
+            <tbody id="tabela-corpo">
+                <!-- O JavaScript vai preencher os dados do Supabase aqui -->
+            </tbody>
+        </table>
+      </main>
+
+      <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <script src="scripts/menu.js"></script>
+  </body>
 </html>
