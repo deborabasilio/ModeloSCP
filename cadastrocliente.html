@@ -22,20 +22,18 @@
   -->
   <form id="formCliente">
 
-    <!-- 
-      Campo TIPO_CLIENTE.
-      No banco é CHAR(1), então salvamos apenas uma letra:
-      F = Pessoa Física
-      J = Pessoa Jurídica
-    -->
+    <label for="codigoCliente">Código do Cliente:</label
+        ><!--gera automaticamente buscando no banco-->
+        <input type="text" id="codigoCliente" readonly />
+
     <label for="tipoCliente">Tipo de Cliente:</label>
     <select id="tipoCliente" required>
       <option value="">Selecione</option>
-      <option value="F">Pessoa Física</option>
-      <option value="J">Pessoa Jurídica</option>
+      <option value="F">Físico</option>
+      <option value="J">Jurídico</option>
     </select>
 
-    <br><br>
+    
 
     <!-- 
       Campo CPF_CNPJ_CLIENTE.
@@ -49,7 +47,7 @@
       required
     >
 
-    <br><br>
+    
 
     <!-- 
       Campo NOME_CLIENTE.
@@ -63,7 +61,7 @@
       required
     >
 
-    <br><br>
+    
 
     <!-- Botão que envia o formulário -->
     <button type="submit">Salvar</button>

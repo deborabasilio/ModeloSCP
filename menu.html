@@ -13,9 +13,14 @@
             <img src="assets/logo-giro-pneus.jpg" alt="Giro Pneus" />
           </li>
 
+          <!-- MENU PAINEL - vai ter tabelas em verde com orçamentos finalizados com a qtde escrito, orçamentos pendentes em amarelo com a qtde escrito e orçamentos reprovados em vermelho e estoque em azul listando os nomes dos produtos (apenas os ativos) e qtde em estoque, todos os 3 em tabelas-->
+          <li>
+            <a href="menu.html" class="dropbtn" id="btn-painel">Painel</a>
+          </li>
+
           <!-- MENU CLIENTES -->
           <li class="dropdown">
-            <a href="#" class="dropbtn" id="btn-clientes">Clientes ▾</a>
+            <a href="#" class="dropbtn" id="btn-clientes">Clientes</a>
             <ul class="dropdown-content" id="dropdown-clientes">
               <li><a href="cadastrocliente.html" target="_blank">Cadastrar</a></li>
               <li><a href="#" id="pesq-clientes">Pesquisar</a></li>
@@ -24,7 +29,7 @@
 
           <!-- MENU CATEGORIAS -->
           <li class="dropdown">
-            <a href="#" class="dropbtn" id="btn-categorias">Categorias ▾</a>
+            <a href="#" class="dropbtn" id="btn-categorias">Categorias</a>
             <ul class="dropdown-content" id="dropdown-categorias">
               <li><a href="categoriaprodutos.html" target="_blank">Cadastrar</a></li>
               <li><a href="#" id="pesq-categorias">Pesquisar</a></li>
@@ -33,7 +38,7 @@
 
           <!-- MENU PRODUTOS -->
           <li class="dropdown">
-            <a href="#" class="dropbtn" id="btn-produtos">Produtos ▾</a>
+            <a href="#" class="dropbtn" id="btn-produtos">Produtos</a>
             <ul class="dropdown-content" id="dropdown-produtos">
               <li><a href="produtos.html" target="_blank">Cadastrar</a></li>
               <li><a href="#" id="pesq-produtos">Pesquisar</a></li>
@@ -42,7 +47,7 @@
 
           <!-- MENU ORÇAMENTOS -->
           <li class="dropdown">
-            <a href="#" class="dropbtn" id="btn-orcamentos">Orçamentos ▾</a>
+            <a href="#" class="dropbtn" id="btn-orcamentos">Orçamentos</a>
             <ul class="dropdown-content" id="dropdown-orcamentos">
               <li><a href="orcamentos.html" target="_blank">Cadastrar</a></li>
               <li><a href="#" id="pesq-orcamentos">Pesquisar</a></li>
@@ -57,10 +62,20 @@
       <main id="area-pesquisa" class="conteudo-pagina">
         <div class="cabecalho-pesquisa">
             <h2 id="titulo-pesquisa">Pesquisa</h2>
-            <!-- Barra de busca (opcional para o futuro) -->
-            <div class="barra-busca">
-                <input type="text" placeholder="Buscar...">
-                <button type="button" class="btn-buscar">Pesquisar</button>
+            
+            <div class="barra-filtro">
+                <label for="filtro-coluna">Filtrar por:</label>
+                <select id="filtro-coluna">
+                    <option value="">Selecione...</option>
+                </select>
+
+                <select id="filtro-condicao">
+                    <option value="contem">Contém</option>
+                    <option value="igual">Igual a</option>
+                </select>
+
+                <input type="text" id="filtro-valor" placeholder="Valor...">
+                <button type="button" class="btn-buscar" id="btn-filtrar">Pesquisar</button>
             </div>
         </div>
 

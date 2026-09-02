@@ -102,72 +102,6 @@ async function carregarCategorias() {
   });
 }
 
-/*
-  =====================================================
-  BUSCAR E MOSTRAR OS PRODUTOS JÁ CADASTRADOS (listagem)
-  =====================================================
-*/
-async function carregarListaProdutos() {
-  const { data, error } = await supabaseClient
-    .from(TABELA_PRODUTOS)
-    .select("produtoid, categoriaprodutoid, ds_produto, vl_venda_produto, status_produto")
-    .order("produtoid", { ascending: false });
-
-  if (error) {
-    listaProdutosTbody.innerHTML =
-      `<tr><td colspan="6">Erro ao buscar produtos: ${error.message}</td></tr>`;
-    console.error(error);
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    listaProdutosTbody.innerHTML =
-      '<tr><td colspan="6">Nenhum produto cadastrado ainda.</td></tr>';
-    return;
-  }
-
-  let linhasHTML = "";
-
-  data.forEach((produto) => {
-    const nomeCategoria = mapaCategorias[produto.categoriaprodutoid] ?? produto.categoriaprodutoid;
-
-    linhasHTML += `
-      <tr>
-        <td>${produto.produtoid}</td>
-        <td>${nomeCategoria}</td>
-        <td>${produto.ds_produto}</td>
-        <td>R$ ${Number(produto.vl_venda_produto).toFixed(2)}</td>
-        <td>${produto.status_produto}</td>
-        <td>
-          <button type="button" class="btn-editar" data-id="${produto.produtoid}">Editar</button>
-          <button type="button" class="btn-excluir" data-id="${produto.produtoid}">Excluir</button>
-        </td>
-      </tr>
-    `;
-  });
-
-  listaProdutosTbody.innerHTML = linhasHTML;
-}
-
-/*
-  =====================================================
-  CLIQUE NOS BOTÕES "EDITAR" E "EXCLUIR" DA LISTAGEM
-  =====================================================
-*/
-listaProdutosTbody.addEventListener("click", async function (evento) {
-  const botaoClicado = evento.target;
-  const idProduto = botaoClicado.dataset.id;
-
-  if (!idProduto) return;
-
-  if (botaoClicado.classList.contains("btn-editar")) {
-    carregarProdutoNoFormulario(idProduto);
-  }
-
-  if (botaoClicado.classList.contains("btn-excluir")) {
-    excluirProduto(idProduto);
-  }
-});
 
 /*
   =====================================================
@@ -208,33 +142,6 @@ async function carregarProdutoNoFormulario(idProduto) {
   formProdutos.scrollIntoView({ behavior: "smooth" });
 }
 
-/*
-  =====================================================
-  EXCLUIR PRODUTO
-  =====================================================
-*/
-async function excluirProduto(idProduto) {
-  const confirmou = window.confirm("Tem certeza que deseja excluir este produto?");
-  if (!confirmou) return;
-
-  const { error } = await supabaseClient
-    .from(TABELA_PRODUTOS)
-    .delete()
-    .eq("produtoid", idProduto);
-
-  if (error) {
-    mensagem.textContent = "Erro ao excluir produto: " + error.message;
-    mensagem.className = "erro";
-    console.error(error);
-    return;
-  }
-
-  mensagem.textContent = "Produto excluído com sucesso!";
-  mensagem.className = "sucesso";
-
-  carregarListaProdutos();
-  mostrarProximoCodigo();
-}
 
 /*
   =====================================================

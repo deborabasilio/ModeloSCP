@@ -162,20 +162,6 @@
   margin: 0;
 }
 
-/* Estilo do campo de busca e botão */
-.barra-busca {
-  display: flex;
-  gap: 10px;
-}
-
-.barra-busca input {
-  padding: 10px 15px;
-  width: 300px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  font-size: 14px;
-  font-family: inherit;
-}
 
 .btn-buscar {
   background-color: var(--blue);
@@ -237,4 +223,70 @@
 
 .btn-editar:hover {
   background-color: #d97706;
+}
+/* Botão de editar dentro da tabela */
+.btn-editar {
+  background-color: #f59e0b;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.btn-editar:hover {
+  background-color: #d97706;
+}
+
+/* Botão de excluir dentro da tabela */
+.btn-excluir {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  margin-left: 8px; /* Cria um pequeno espaço entre o botão Editar e Excluir */
+  transition: 0.3s;
+}
+
+.btn-excluir:hover {
+  background-color: #dc2626;
+}
+/* =========================================
+   NOVA BARRA DE FILTROS DINÂMICA
+   ========================================= */
+.barra-filtro {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #f8fafc;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.barra-filtro label {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--navy);
+}
+
+.barra-filtro select,
+.barra-filtro input {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+
+.barra-filtro select:focus,
+.barra-filtro input:focus {
+  border-color: var(--blue);
 }

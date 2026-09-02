@@ -37,36 +37,10 @@
                 <option value="ATIVO">Ativo</option>
                 <option value="INATIVO">Inativo</option>
             </select>
-            <button type="submit" id="botao">Salvar Produto</button>
+            <button type="submit" id="botao">Salvar</button>
         </form>
 
         <p id="mensagem"></p>
-
-        <!--
-          Listagem dos produtos já cadastrados.
-          O produtos.js preenche o <tbody> com os dados do Supabase
-          e coloca em cada linha os botões Editar e Excluir.
-        -->
-        <section class="lista-registros">
-            <h3>Produtos cadastrados</h3>
-            <table class="tabela-registros">
-                <thead>
-                    <tr>
-                        <th>Código</th>
-                        <th>Categoria</th>
-                        <th>Descrição</th>
-                        <th>Valor</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="listaProdutos">
-                    <!-- linhas geradas pelo produtos.js -->
-                </tbody>
-            </table>
-        </section>
-
-    </div>
 
      <!--Não salvar sem categoria. 
      • Não salvar sem descrição. 
