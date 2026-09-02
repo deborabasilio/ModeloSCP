@@ -12,74 +12,78 @@
       <form id="formOrcamento">
         <label for="codigoOrcamento">Código do Orçamento:</label
         ><!--gera automaticamente buscando no banco-->
-        <input type="text" readonly />
+        <input type="text" id="codigoOrcamento" readonly />
 
         <label for="clienteSelec">Cliente selecionado:</label>
         <select id="clienteSelec" required>
           <option value="" disabled selected>Selecione</option>
-          <option value=""></option>
-          <!--busca os clientes cadastrados no banco-->
+          <!--as opções aqui embaixo são preenchidas pelo orcamentos.js, buscando os clientes do banco-->
         </select>
+
         <label for="dataOrcamento">Data do Orçamento:</label>
         <!--gera automaticamente a data e hora-->
-        <input type="datetime" readonly required />
+        <input type="text" id="dataOrcamento" readonly required />
 
         <label for="validadeOrcamento">Data de Validade:</label>
-        <input type="date" required />
-
-        <label for="valorTotal">Valor Total:</label>
-        <!--aqui entra a função para calcular total do orçamento-->
+        <input type="date" id="validadeOrcamento" required />
 
         <h3>Itens do Orçamento</h3>
 
-        <label for="produtoOrc">Produto(s):</label>
-        <input> <!--aqui seleciona produtos-->
+        <label for="produtoOrc">Produto:</label>
+        <select id="produtoOrc">
+          <option value="" selected>Selecione um produto</option>
+          <!--as opções aqui embaixo são preenchidas pelo orcamentos.js, buscando os produtos do banco-->
+        </select>
 
         <label for="descProdutoOrc">Descrição:</label>
-        <input> <!--aqui seleciona descricao do produto-->
+        <input type="text" id="descProdutoOrc" readonly>
+        <!--preenchida sozinha quando o produto é selecionado-->
 
         <label for="qtdeProdutoOrc">Quantidade:</label>
-        <input> <!--aqui seleciona quantidade-->
+        <input type="number" id="qtdeProdutoOrc" min="1" value="1">
 
         <label for="valorUnitario">Valor Unitário:</label>
-        <input> <!--aqui seleciona valor item-->
+        <input type="text" id="valorUnitario" readonly>
+        <!--preenchido sozinho com o valor de venda do produto-->
 
-        <label for="valorTotal">Valor Total:</label>
-        <input> <!--aqui entra total da qtde de itens-->
+        <label for="valorTotalItem">Valor Total do Item:</label>
+        <input type="text" id="valorTotalItem" readonly>
+        <!--Valor total do item = Quantidade × Valor unitário, calculado sozinho-->
+
+        <button type="button" id="btnAdicionarItem" class="botao-secundario">Adicionar Item</button>
+
+        <!--
+          Lista dos itens que já foram adicionados neste orçamento.
+          O orcamentos.js preenche essa tabela e recalcula o total
+          toda vez que um item é adicionado ou removido.
+        -->
+        <div class="lista-itens-orcamento">
+          <table>
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Qtde</th>
+                <th>Valor Unit.</th>
+                <th>Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="corpoListaItens">
+              <!-- linhas geradas pelo orcamentos.js -->
+            </tbody>
+          </table>
+        </div>
+
+        <label for="valorTotalOrcamento">Valor Total do Orçamento:</label>
+        <!--soma de todos os itens adicionados, recalculada automaticamente-->
+        <input type="text" id="valorTotalOrcamento" readonly value="0,00">
+
         <button type="submit">Salvar Orçamento</button>
       </form>
+
+      <p id="mensagem"></p>
     </div>
-    <!--Codigo do orçamento
-    Cliente selecionado
-    Data do orçamento
-    Data de validade
-    Valor total calculado-->
 
-    <!--itens do orcamento
-    produto
-    descricao do produto
-    quantidade
-    valor unitario
-    valor total do item
-    
-    permitir adicionar, listar e remover
-    
-    s totais devem ser calculados automaticamente em JavaScript. 
-    Total do item
-
-    Valor total do item = Quantidade × Valorunitário
-
-Total do orçamento
-
-Valor total = soma dos totais dos itens
-
-Exemplo
-• Quantidade: 2
-• Valor unitário: R$ 50,00
-• Total do item: R$ 100,00
-• Somar todos os itens para obter o total geral
-
-a alteraçao ou remoçao do item deve recalcular o valor total-->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="scripts/orcamentos.js"></script>
   </body>

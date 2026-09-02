@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('pesq-categorias')?.addEventListener('click', (e) => {
         e.preventDefault();
-        buscarDados('categorias', 'Pesquisa de Categorias'); 
+        buscarDados('categoria_produto', 'Pesquisa de Categorias'); 
     });
 
     document.getElementById('pesq-produtos')?.addEventListener('click', (e) => {
@@ -112,6 +112,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('pesq-orcamentos')?.addEventListener('click', (e) => {
         e.preventDefault();
-        buscarDados('orcamentos', 'Pesquisa de Orçamentos'); 
+        buscarDados('orcamento_item', 'Pesquisa de Orçamentos'); 
     });
 });

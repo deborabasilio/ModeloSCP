@@ -102,7 +102,7 @@ formCliente.addEventListener("submit", async function(evento) {
     insere o registro na tabela.
   */
   const { error } = await supabaseClient
-    .from("cliente")
+    .from("clientes")
     .insert(novoCliente);
 
   /*
