@@ -40,6 +40,28 @@ const botaoSalvar = document.getElementById("botao");
 
 let idProdutoEmEdicao = null;
 
+// =====================================================
+// PROTEÇÃO DE ROTA E PERMISSÕES
+// =====================================================
+const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
+
+if (!usuarioLogadoTexto) {
+  window.location.href = "login.html"; // Expulsa se não estiver logado
+} else {
+  const usuarioLogado = JSON.parse(usuarioLogadoTexto);
+  const ehAdmin = String(usuarioLogado.tipo_usuario).trim().toUpperCase() !== "PADRAO";
+  const usuarioPodeEditar = ehAdmin || usuarioLogado.pode_editar === true;
+
+  const parametrosUrl = new URLSearchParams(window.location.search);
+  const idAcesso = parametrosUrl.get("id");
+
+  // Se estiver tentando acessar um orçamento existente (Visualizar/Editar) sem permissão
+  if (idAcesso && !usuarioPodeEditar) {
+    alert("Você não tem permissão para visualizar ou editar registros.");
+    window.location.href = "menu.html";
+  }
+}
+
 /*
   =====================================================
   FORMATA A DATA/HORA ATUAL PARA MOSTRAR NA TELA

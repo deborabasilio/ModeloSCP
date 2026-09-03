@@ -64,6 +64,28 @@ const btnReprovarOrcamento = document.getElementById("btnReprovarOrcamento");
 */
 let itensDoOrcamento = [];
 
+// =====================================================
+// PROTEÇÃO DE ROTA E PERMISSÕES
+// =====================================================
+const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
+
+if (!usuarioLogadoTexto) {
+  window.location.href = "login.html"; // Expulsa se não estiver logado
+} else {
+  const usuarioLogado = JSON.parse(usuarioLogadoTexto);
+  const ehAdmin = String(usuarioLogado.tipo_usuario).trim().toUpperCase() !== "PADRAO";
+  const usuarioPodeEditar = ehAdmin || usuarioLogado.pode_editar === true;
+
+  const parametrosUrl = new URLSearchParams(window.location.search);
+  const idAcesso = parametrosUrl.get("id");
+
+  // Se estiver tentando acessar um orçamento existente (Visualizar/Editar) sem permissão
+  if (idAcesso && !usuarioPodeEditar) {
+    alert("Você não tem permissão para visualizar ou editar registros.");
+    window.location.href = "menu.html";
+  }
+}
+
 /*
   =====================================================
   FUNÇÃO PARA MOSTRAR VALORES EM REAL (R$)
@@ -473,15 +495,20 @@ btnReprovarOrcamento?.addEventListener("click", () => {
   =====================================================
   QUANDO A PÁGINA ABRE
   =====================================================
-  Se a página foi aberta com "?id=5" na URL, mostramos a
-  visualização/aprovação em vez do formulário de criação.
 */
 const parametrosUrl = new URLSearchParams(window.location.search);
 const idOrcamentoParaVisualizar = parametrosUrl.get("id");
+const descricaoHeader = document.getElementById("descricaoHeader");
 
 if (idOrcamentoParaVisualizar) {
+  // Tela de Visualização: Mantém o texto padrão do HTML ("Acompanhe propostas comerciais.")
   carregarOrcamentoParaVisualizacao(idOrcamentoParaVisualizar);
 } else {
+  // Tela de Criação: Altera o texto do cabeçalho
+  if (descricaoHeader) {
+    descricaoHeader.textContent = "Crie novos orçamentos e propostas comerciais.";
+  }
+  
   mostrarProximoCodigo();
   carregarClientes();
   carregarProdutos();

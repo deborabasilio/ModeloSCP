@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // O login.js guarda esses dados no navegador (sessionStorage) quando
   // o usuário entra com sucesso. Se não tiver nada aqui, mandamos a
   // pessoa de volta para a tela de login.
-  const usuarioLogadoTexto = sessionStorage.getItem("usuarioLogado");
+  const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
 
   if (!usuarioLogadoTexto) {
     window.location.href = "login.html";
@@ -13,11 +13,15 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   const usuarioLogado = JSON.parse(usuarioLogadoTexto);
-  const tipoUsuarioLogado = String(usuarioLogado.tipo_usuario || "").trim().toUpperCase();
+  const tipoUsuarioLogado = String(usuarioLogado.tipo_usuario || "")
+    .trim()
+    .toUpperCase();
   // Só escondemos Editar/Excluir quando o acesso for explicitamente PADRAO.
   // Qualquer outro valor (ADMIN, ou algo inesperado) mantém os botões visíveis.
   const ehAdmin = tipoUsuarioLogado !== "PADRAO";
-
+  // O ADMIN sempre pode tudo. O usuário PADRAO depende das novas colunas:
+  const usuarioPodeEditar = ehAdmin || usuarioLogado.pode_editar === true;
+  const usuarioPodeExcluir = ehAdmin || usuarioLogado.pode_excluir === true;
   // ==========================================
   // 1. ABRIR E FECHAR OS SUBMENUS (DROPDOWNS)
   // ==========================================
@@ -61,8 +65,8 @@ document.addEventListener("DOMContentLoaded", function () {
     SUPABASE_ANON_KEY,
   );
 
-  let tabelaAtual = '';
-  let queryAtual = '*';
+  let tabelaAtual = "";
+  let queryAtual = "*";
 
   // Nome da coluna que é a chave (ID) de cada tabela, usada para
   // Editar e Excluir. E o nome da página de cadastro de cada uma,
@@ -71,14 +75,14 @@ document.addEventListener("DOMContentLoaded", function () {
     clientes: "clienteid",
     categoria_produto: "categoriaprodutoid",
     produtos: "produtoid",
-    orcamentos: "orcamentoid"
+    orcamentos: "orcamentoitemid",
   };
 
   const PAGINA_DA_TABELA = {
     clientes: "cadastrocliente.html",
     categoria_produto: "categoriaprodutos.html",
     produtos: "produtos.html",
-    orcamentos: "orcamentos.html"
+    orcamentos: "orcamentos.html",
   };
 
   const areaPainelEl = document.getElementById("area-painel");
@@ -113,23 +117,25 @@ document.addEventListener("DOMContentLoaded", function () {
       .forEach((m) => m.classList.remove("mostrar-dropdown"));
 
     thead.innerHTML = "";
-    tbody.innerHTML = '<tr><td colspan="10">Buscando dados no servidor...</td></tr>';
+    tbody.innerHTML =
+      '<tr><td colspan="10">Buscando dados no servidor...</td></tr>';
 
     let requisicao = window.supabaseClient.from(nomeTabela).select(query);
 
     // SE HOUVER UM FILTRO APLICADO PELO USUÁRIO
     if (filtro && filtro.valor) {
-      let nomeColunaReal = filtro.coluna.split(':')[1] || filtro.coluna; 
-      
+      let nomeColunaReal = filtro.coluna.split(":")[1] || filtro.coluna;
+
       // CONVERSÃO DE JOIN: Transforma "clientes(nome_cliente)" em "clientes.nome_cliente"
-      if (nomeColunaReal.includes('(') && nomeColunaReal.includes(')')) {
-        nomeColunaReal = nomeColunaReal.replace(/\(/g, '.').replace(/\)/g, '');
+      if (nomeColunaReal.includes("(") && nomeColunaReal.includes(")")) {
+        nomeColunaReal = nomeColunaReal.replace(/\(/g, ".").replace(/\)/g, "");
       }
 
       // Identifica o tipo de dado baseado no nome da coluna real ou de relacionamento
-      const ehNumero = nomeColunaReal.includes('id') || nomeColunaReal.includes('vl_');
-      const ehData = nomeColunaReal.includes('dt_');
-      
+      const ehNumero =
+        nomeColunaReal.includes("id") || nomeColunaReal.includes("vl_");
+      const ehData = nomeColunaReal.includes("dt_");
+
       if (ehNumero) {
         // IDs e valores numéricos exigem busca exata para evitar conflito de tipos no Postgres
         requisicao = requisicao.eq(nomeColunaReal, filtro.valor);
@@ -159,7 +165,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (!data || data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="10">Nenhum registro encontrado com estes filtros.</td></tr>';
+      tbody.innerHTML =
+        '<tr><td colspan="10">Nenhum registro encontrado com estes filtros.</td></tr>';
       return;
     }
 
@@ -167,12 +174,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // PREENCHE O DROPDOWN DE COLUNAS AUTOMATICAMENTE SE FOR A PRIMEIRA BUSCA (SEM FILTRO)
     if (selectColuna && !filtro) {
-      selectColuna.innerHTML = '<option value="">Selecione a coluna...</option>';
-      colunas.forEach(coluna => {
+      selectColuna.innerHTML =
+        '<option value="">Selecione a coluna...</option>';
+      colunas.forEach((coluna) => {
         const nomeFormatado = coluna.replace(/_/g, " ").toUpperCase();
-        
-        let queryArray = query.split(',').map(item => item.trim());
-        let colunaOriginal = queryArray.find(q => q.startsWith(coluna + ':')) || coluna;
+
+        let queryArray = query.split(",").map((item) => item.trim());
+        let colunaOriginal =
+          queryArray.find((q) => q.startsWith(coluna + ":")) || coluna;
 
         selectColuna.innerHTML += `<option value="${colunaOriginal}">${nomeFormatado}</option>`;
       });
@@ -226,18 +235,20 @@ document.addEventListener("DOMContentLoaded", function () {
       // Acesso PADRAO só pode ver e cadastrar, não pode editar nem excluir.
       let botoesAcao = "";
 
-      if (ehAdmin) {
+      if (usuarioPodeEditar) {
         if (PAGINA_DA_TABELA[nomeTabela]) {
-          const textoBotao = nomeTabela === "orcamentos" ? "Visualizar" : "Editar";
+          const textoBotao = nomeTabela === "orcamento_item" ? "Visualizar" : "Editar";
           botoesAcao += `<button type="button" class="btn-editar">${textoBotao}</button>`;
         }
-        botoesAcao += `<button type="button" class="btn-excluir">Excluir</button>`;
-
-        // Para orçamentos pendentes, mostra atalhos para Aprovar/Reprovar
-        if (nomeTabela === "orcamentos" && linha.Status === "PENDENTE") {
+        
+        if (nomeTabela === "orcamento_item" && linha.Status === "PENDENTE") {
           botoesAcao += `<button type="button" class="btn-aprovar">Aprovar</button>`;
           botoesAcao += `<button type="button" class="btn-reprovar">Reprovar</button>`;
         }
+      }
+
+      if (usuarioPodeExcluir) {
+        botoesAcao += `<button type="button" class="btn-excluir">Excluir</button>`;
       }
 
       bodyHTML += `<td style="white-space: nowrap;">${botoesAcao}</td></tr>`;
@@ -248,72 +259,86 @@ document.addEventListener("DOMContentLoaded", function () {
   // ==========================================
   // 3b. AÇÕES NA LISTAGEM: EDITAR/VISUALIZAR, EXCLUIR, APROVAR, REPROVAR
   // ==========================================
-  document.getElementById("tabela-corpo")?.addEventListener("click", async function (evento) {
-    const botaoClicado = evento.target;
-    const linhaClicada = botaoClicado.closest("tr");
-    if (!linhaClicada) return;
+  document
+    .getElementById("tabela-corpo")
+    ?.addEventListener("click", async function (evento) {
+      const botaoClicado = evento.target;
+      const linhaClicada = botaoClicado.closest("tr");
+      if (!linhaClicada) return;
 
-    const idRegistro = linhaClicada.dataset.id;
+      const idRegistro = linhaClicada.dataset.id;
 
-    // EDITAR/VISUALIZAR: abre a página de cadastro correspondente já com o ID na URL
-    if (botaoClicado.classList.contains("btn-editar")) {
-      const pagina = PAGINA_DA_TABELA[tabelaAtual];
-      if (pagina) {
-        window.open(`${pagina}?id=${idRegistro}`, "_blank");
-      }
-      return;
-    }
-
-    // EXCLUIR: apaga o registro no Supabase depois de confirmar com o usuário
-    if (botaoClicado.classList.contains("btn-excluir")) {
-      const confirmou = confirm("Tem certeza que deseja excluir este registro? Essa ação não pode ser desfeita.");
-      if (!confirmou) return;
-
-      const colunaChave = CHAVE_DA_TABELA[tabelaAtual];
-      const { error } = await window.supabaseClient
-        .from(tabelaAtual)
-        .delete()
-        .eq(colunaChave, idRegistro);
-
-      if (error) {
-        alert("Erro ao excluir: " + error.message);
-        console.error(error);
+      // EDITAR/VISUALIZAR: abre a página de cadastro correspondente já com o ID na URL
+      if (botaoClicado.classList.contains("btn-editar")) {
+        const pagina = PAGINA_DA_TABELA[tabelaAtual];
+        if (pagina) {
+          window.open(`${pagina}?id=${idRegistro}`, "_blank");
+        }
         return;
       }
 
-      linhaClicada.remove();
-      return;
-    }
+      // EXCLUIR: apaga o registro no Supabase depois de confirmar com o usuário
+      if (botaoClicado.classList.contains("btn-excluir")) {
+        const confirmou = confirm(
+          "Tem certeza que deseja excluir este registro? Essa ação não pode ser desfeita.",
+        );
+        if (!confirmou) return;
 
-    // APROVAR / REPROVAR: atualiza o status do orçamento
-    if (botaoClicado.classList.contains("btn-aprovar") || botaoClicado.classList.contains("btn-reprovar")) {
-      const novoStatus = botaoClicado.classList.contains("btn-aprovar") ? "FINALIZADO" : "REPROVADO";
+        const colunaChave = CHAVE_DA_TABELA[tabelaAtual];
+        const { error } = await window.supabaseClient
+          .from(tabelaAtual)
+          .delete()
+          .eq(colunaChave, idRegistro);
 
-      const { error } = await window.supabaseClient
-        .from("orcamentos")
-        .update({ status_orcamento: novoStatus })
-        .eq("orcamentoid", idRegistro);
+        if (error) {
+          alert("Erro ao excluir: " + error.message);
+          console.error(error);
+          return;
+        }
 
-      if (error) {
-        alert("Erro ao atualizar o status do orçamento: " + error.message);
-        console.error(error);
+        linhaClicada.remove();
         return;
       }
 
-      // Atualiza a listagem para refletir o novo status
-      buscarDados(tabelaAtual, document.getElementById("titulo-pesquisa").innerText, queryAtual);
-      return;
-    }
-  });
+      // APROVAR / REPROVAR: atualiza o status do orçamento
+      if (
+        botaoClicado.classList.contains("btn-aprovar") ||
+        botaoClicado.classList.contains("btn-reprovar")
+      ) {
+        const novoStatus = botaoClicado.classList.contains("btn-aprovar")
+          ? "FINALIZADO"
+          : "REPROVADO";
+
+        const { error } = await window.supabaseClient
+          .from("orcamentos")
+          .update({ status_orcamento: novoStatus })
+          .eq("orcamentoid", idRegistro);
+
+        if (error) {
+          alert("Erro ao atualizar o status do orçamento: " + error.message);
+          console.error(error);
+          return;
+        }
+
+        // Atualiza a listagem para refletir o novo status
+        buscarDados(
+          tabelaAtual,
+          document.getElementById("titulo-pesquisa").innerText,
+          queryAtual,
+        );
+        return;
+      }
+    });
 
   // ==========================================
   // 4. EVENTOS DO BOTÃO DE FILTRAR (PESQUISA AVANÇADA)
   // ==========================================
   document.getElementById("btn-filtrar")?.addEventListener("click", (e) => {
     e.preventDefault();
-    
+
     const colunaSelecionada = document.getElementById("filtro-coluna").value;
-    const condicaoSelecionada = document.getElementById("filtro-condicao").value;
+    const condicaoSelecionada =
+      document.getElementById("filtro-condicao").value;
     const valorDigitado = document.getElementById("filtro-valor").value;
 
     if (!colunaSelecionada) {
@@ -322,41 +347,45 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     buscarDados(
-      tabelaAtual, 
-      document.getElementById("titulo-pesquisa").innerText, 
-      queryAtual, 
+      tabelaAtual,
+      document.getElementById("titulo-pesquisa").innerText,
+      queryAtual,
       {
         coluna: colunaSelecionada,
         condicao: condicaoSelecionada,
-        valor: valorDigitado
-      }
+        valor: valorDigitado,
+      },
     );
   });
 
   // ==========================================
-  // 5. EVENTOS DE CLIQUE NOS MENUS 
+  // 5. EVENTOS DE CLIQUE NOS MENUS
   // ==========================================
   document.getElementById("pesq-produtos")?.addEventListener("click", (e) => {
     e.preventDefault();
-    const query = "Código:produtoid, Produto:ds_produto, Valor_Unitário:vl_venda_produto, Estoque:qt_estoque_produto, Observação:obs_produto, Categoria:categoria_produto(ds_categoria_produto), Status:status_produto, Data_de_Cadastro:dt_cadastro_produto";
+    const query =
+      "Código:produtoid, Produto:ds_produto, Valor_Unitário:vl_venda_produto, Estoque:qt_estoque_produto, Observação:obs_produto, Categoria:categoria_produto(ds_categoria_produto), Status:status_produto, Data_de_Cadastro:dt_cadastro_produto";
     buscarDados("produtos", "Pesquisa de Produtos", query);
   });
 
   document.getElementById("pesq-orcamentos")?.addEventListener("click", (e) => {
     e.preventDefault();
-    const query = "Código:orcamentoid, Data_do_Orçamento:dt_orcamento, Cliente:clientes(nome_cliente), Valor_Total:vl_total_orcamento, Data_de_Validade:dt_validade_orcamento, Status:status_orcamento";
+    const query =
+      "Código:orcamentoid, Data_do_Orçamento:dt_orcamento, Cliente:clientes(nome_cliente), Valor_Total:vl_total_orcamento, Data_de_Validade:dt_validade_orcamento, Status:status_orcamento";
     buscarDados("orcamentos", "Pesquisa de Orçamentos", query);
   });
-  
+
   document.getElementById("pesq-clientes")?.addEventListener("click", (e) => {
     e.preventDefault();
-    const query = "Código:clienteid, Tipo_de_Cliente:tipo_cliente, CPF_CNPJ:cpf_cnpj_cliente, Nome:nome_cliente";
+    const query =
+      "Código:clienteid, Tipo_de_Cliente:tipo_cliente, CPF_CNPJ:cpf_cnpj_cliente, Nome:nome_cliente";
     buscarDados("clientes", "Pesquisa de Clientes", query);
   });
 
   document.getElementById("pesq-categorias")?.addEventListener("click", (e) => {
     e.preventDefault();
-    const query = "Código:categoriaprodutoid, Descrição_da_Categoria:ds_categoria_produto";
+    const query =
+      "Código:categoriaprodutoid, Descrição_da_Categoria:ds_categoria_produto";
     buscarDados("categoria_produto", "Pesquisa de Categorias", query);
   });
 
@@ -374,13 +403,17 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    corpo.innerHTML = lista.map((orc) => `
+    corpo.innerHTML = lista
+      .map(
+        (orc) => `
       <tr>
         <td>${orc.orcamentoid}</td>
         <td>${orc.clientes?.nome_cliente ?? ""}</td>
         <td>R$ ${Number(orc.vl_total_orcamento).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
       </tr>
-    `).join("");
+    `,
+      )
+      .join("");
   }
 
   async function carregarPainel() {
@@ -391,20 +424,37 @@ document.addEventListener("DOMContentLoaded", function () {
       .forEach((m) => m.classList.remove("mostrar-dropdown"));
 
     // Orçamentos, separados por status
-    const { data: orcamentos, error: erroOrcamentos } = await window.supabaseClient
-      .from("orcamentos")
-      .select("orcamentoid, vl_total_orcamento, status_orcamento, clientes(nome_cliente)");
+    const { data: orcamentos, error: erroOrcamentos } =
+      await window.supabaseClient
+        .from("orcamentos")
+        .select(
+          "orcamentoid, vl_total_orcamento, status_orcamento, clientes(nome_cliente)",
+        );
 
     if (erroOrcamentos) {
       console.error(erroOrcamentos);
     } else {
-      const finalizados = orcamentos.filter((o) => o.status_orcamento === "FINALIZADO");
-      const pendentes = orcamentos.filter((o) => o.status_orcamento === "PENDENTE");
-      const reprovados = orcamentos.filter((o) => o.status_orcamento === "REPROVADO");
+      const finalizados = orcamentos.filter(
+        (o) => o.status_orcamento === "FINALIZADO",
+      );
+      const pendentes = orcamentos.filter(
+        (o) => o.status_orcamento === "PENDENTE",
+      );
+      const reprovados = orcamentos.filter(
+        (o) => o.status_orcamento === "REPROVADO",
+      );
 
-      preencherTabelaOrcamentos("tabela-finalizados", "qtd-finalizados", finalizados);
+      preencherTabelaOrcamentos(
+        "tabela-finalizados",
+        "qtd-finalizados",
+        finalizados,
+      );
       preencherTabelaOrcamentos("tabela-pendentes", "qtd-pendentes", pendentes);
-      preencherTabelaOrcamentos("tabela-reprovados", "qtd-reprovados", reprovados);
+      preencherTabelaOrcamentos(
+        "tabela-reprovados",
+        "qtd-reprovados",
+        reprovados,
+      );
     }
 
     // Estoque: produtos ativos e sua quantidade
@@ -418,16 +468,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (erroProdutos) {
       console.error(erroProdutos);
-      corpoEstoque.innerHTML = '<tr><td colspan="2">Erro ao buscar estoque.</td></tr>';
+      corpoEstoque.innerHTML =
+        '<tr><td colspan="2">Erro ao buscar estoque.</td></tr>';
     } else if (!produtos || produtos.length === 0) {
-      corpoEstoque.innerHTML = '<tr><td colspan="2">Nenhum produto ativo.</td></tr>';
+      corpoEstoque.innerHTML =
+        '<tr><td colspan="2">Nenhum produto ativo.</td></tr>';
     } else {
-      corpoEstoque.innerHTML = produtos.map((p) => `
+      corpoEstoque.innerHTML = produtos
+        .map(
+          (p) => `
         <tr>
           <td>${p.ds_produto}</td>
           <td>${p.qt_estoque_produto ?? 0}</td>
         </tr>
-      `).join("");
+      `,
+        )
+        .join("");
     }
   }
 
@@ -438,4 +494,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // O Painel é a tela inicial ao abrir o menu
   carregarPainel();
+
+  // ==========================================
+  // 7. FUNÇÃO DE LOGOUT (SAIR)
+  // ==========================================
+  document
+    .getElementById("btn-sair")
+    ?.addEventListener("click", function (event) {
+      event.preventDefault(); // Impede o link de agir normalmente
+
+      // Remove os dados do usuário da memória do navegador
+      localStorage.removeItem("usuarioLogado");
+      sessionStorage.removeItem("usuarioLogado"); // Por garantia, caso mude de ideia depois
+
+      // Redireciona para a tela de login
+      window.location.href = "login.html";
+    });
 });

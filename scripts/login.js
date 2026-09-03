@@ -2,16 +2,17 @@
 const SUPABASE_URL = "https://whidvijhqmudgzyylbfo.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_MHgrDJpm8wa4mGTJWPR0sg_08Bc9dut";
 
-// Cria a conexão que será usada para consultar a tabela usuarios.
+// Cria a conexão que será usada para consultar a tabela e autenticar.
 const supabaseClient = supabase.createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
 );
 
-// Pegamos os elementos da página para ler os valores e mostrar mensagens.
+// Pegamos os elementos da página. 
+// O campo userNome agora será usado para digitar o E-MAIL.
 const formUser = document.querySelector('#formUser');
 const tipoUser = document.querySelector('#tipoUser');
-const userNome = document.querySelector('#UserNome');
+const userNome = document.querySelector('#UserNome'); 
 const userSenha = document.querySelector('#UserSenha');
 const mensagem = document.querySelector('#mensagem');
 
@@ -19,39 +20,56 @@ formUser.addEventListener('submit', async function (evento) {
   // Impede o recarregamento da página ao enviar o formulário.
   evento.preventDefault();
 
-  mensagem.textContent = 'Verificando login...';
+  mensagem.textContent = 'Autenticando...';
   mensagem.className = '';
 
-  // Procura na tabela usuarios um registro com os dados informados no login.
-  const { data: usuarioEncontrado, error } = await supabaseClient
+  const emailDigitado = userNome.value.trim();
+  const senhaDigitada = userSenha.value;
+
+  // 1. FAZ O LOGIN SEGURO USANDO O SUPABASE AUTH
+  const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+    email: emailDigitado,
+    password: senhaDigitada
+  });
+
+  if (authError) {
+    mensagem.textContent = 'E-mail ou senha inválidos.';
+    mensagem.className = 'erro';
+    console.error(authError);
+    return;
+  }
+
+  // 2. BUSCA AS PERMISSÕES NA SUA TABELA 'usuarios' USANDO O ID SEGURO
+  const idSeguro = authData.user.id;
+
+  const { data: usuarioEncontrado, error: dbError } = await supabaseClient
     .from('usuarios')
-    .select('id_usuarios, usuario, tipo_usuario')
-    .eq('usuario', userNome.value.trim())
-    .eq('senha', userSenha.value)
-    .eq('tipo_usuario', tipoUser.value)
+    .select('id_usuarios, usuario, tipo_usuario, pode_editar, pode_excluir')
+    .eq('auth_id', idSeguro)
+    .eq('tipo_usuario', tipoUser.value) // Confere se ele acertou o nível de acesso no select
     .maybeSingle();
 
-  // Trata erros de conexão, permissões ou acesso ao Supabase.
-  if (error) {
-    mensagem.textContent = 'Não foi possível verificar o login. Tente novamente.';
+  if (dbError) {
+    mensagem.textContent = 'Erro ao buscar permissões do usuário.';
     mensagem.className = 'erro';
-    console.error(error);
+    console.error(dbError);
     return;
   }
 
-  // Se não houver registro igual no banco, o acesso não é permitido.
   if (!usuarioEncontrado) {
-    mensagem.textContent = 'Usuário, senha ou tipo de acesso inválido.';
+    // Se logou com sucesso, mas o tipo_usuario não bateu ou o auth_id não está na tabela
+    await supabaseClient.auth.signOut(); // Desloga por segurança
+    mensagem.textContent = 'Acesso não autorizado para este perfil.';
     mensagem.className = 'erro';
     return;
   }
 
-  // Guarda os dados do usuário, mas nunca guarda a senha.
-  sessionStorage.setItem('usuarioLogado', JSON.stringify(usuarioEncontrado));
+  // Guarda os dados de perfil no navegador (incluindo as permissões)
+  localStorage.setItem('usuarioLogado', JSON.stringify(usuarioEncontrado));
 
   mensagem.textContent = 'Login realizado com sucesso!';
   mensagem.className = 'sucesso';
 
-  // Abre o menu principal somente depois de validar o usuário.
+  // Redireciona para o menu
   window.location.href = 'menu.html';
 });
