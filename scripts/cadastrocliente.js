@@ -22,6 +22,10 @@ const tipoClienteInput = document.getElementById("tipoCliente");
 const cpfCnpjClienteInput = document.getElementById("cpfCnpjCliente");
 const nomeClienteInput = document.getElementById("nomeCliente");
 const mensagem = document.getElementById("mensagem");
+const botaoSalvar = document.getElementById("botao");
+
+// Guarda o ID do cliente quando estamos editando (null = cadastro novo)
+let idClienteEmEdicao = null;
 
 /*
   =====================================================
@@ -53,8 +57,50 @@ async function buscarProximoCodigo() {
   codigoOrcamentoInput.value = proximoId;
 }
 
-// Executa a busca assim que o arquivo é carregado
-buscarProximoCodigo();
+/*
+  =====================================================
+  FUNÇÃO PARA CARREGAR UM CLIENTE PARA EDIÇÃO
+  =====================================================
+  Usada quando a página é aberta com "?id=5" na URL,
+  o que acontece ao clicar em "Editar" na listagem do menu.
+*/
+async function carregarClienteNoFormulario(idCliente) {
+  const { data: cliente, error } = await supabaseClient
+    .from("clientes")
+    .select("*")
+    .eq("clienteid", idCliente)
+    .single();
+
+  if (error || !cliente) {
+    mensagem.textContent = "Não foi possível carregar este cliente.";
+    mensagem.className = "erro";
+    console.error(error);
+    return;
+  }
+
+  codigoOrcamentoInput.value = cliente.clienteid;
+  tipoClienteInput.value = cliente.tipo_cliente;
+  cpfCnpjClienteInput.value = cliente.cpf_cnpj_cliente;
+  nomeClienteInput.value = cliente.nome_cliente;
+
+  idClienteEmEdicao = cliente.clienteid;
+  botaoSalvar.textContent = "Atualizar Cliente";
+}
+
+/*
+  =====================================================
+  QUANDO A PÁGINA ABRE
+  =====================================================
+*/
+const parametrosUrl = new URLSearchParams(window.location.search);
+const idClienteParaEditar = parametrosUrl.get("id");
+
+if (idClienteParaEditar) {
+  carregarClienteNoFormulario(idClienteParaEditar);
+} else {
+  // Executa a busca do próximo código apenas quando é um cadastro novo
+  buscarProximoCodigo();
+}
 
 
 /*
@@ -69,20 +115,36 @@ formCliente.addEventListener("submit", async function(evento) {
   const cpfCnpjCliente = cpfCnpjClienteInput.value;
   const nomeCliente = nomeClienteInput.value;
 
-  const novoCliente = {
+  const dadosCliente = {
     tipo_cliente: tipoCliente,
     cpf_cnpj_cliente: cpfCnpjCliente,
     nome_cliente: nomeCliente
   };
 
-  // Adicionado o .select() no final para garantir que o banco retorne o dado gravado
-  const { data, error } = await supabaseClient
-    .from("clientes")
-    .insert(novoCliente)
-    .select();
+  let erroSupabase = null;
+  let idGerado = idClienteEmEdicao;
 
-  if (error) {
-    mensagem.textContent = "Erro ao salvar cliente: " + error.message;
+  if (idClienteEmEdicao) {
+    // Já existe um cliente sendo editado: atualiza em vez de inserir
+    const { error } = await supabaseClient
+      .from("clientes")
+      .update(dadosCliente)
+      .eq("clienteid", idClienteEmEdicao);
+
+    erroSupabase = error;
+  } else {
+    // Adicionado o .select() no final para garantir que o banco retorne o dado gravado
+    const { data, error } = await supabaseClient
+      .from("clientes")
+      .insert(dadosCliente)
+      .select();
+
+    erroSupabase = error;
+    if (!error) idGerado = data[0].clienteid;
+  }
+
+  if (erroSupabase) {
+    mensagem.textContent = "Erro ao salvar cliente: " + erroSupabase.message;
     mensagem.className = "erro"; 
     
     setTimeout(() => {
@@ -93,13 +155,15 @@ formCliente.addEventListener("submit", async function(evento) {
     return;
   }
 
-  // Mostra a confirmação com o ID real que o banco gerou
-  const idGerado = data[0].clienteid;
-  mensagem.textContent = `Cliente #${idGerado} salvo com sucesso!`;
+  mensagem.textContent = idClienteEmEdicao
+    ? `Cliente #${idGerado} atualizado com sucesso!`
+    : `Cliente #${idGerado} salvo com sucesso!`;
   mensagem.className = "sucesso";
 
-  // Limpa o formulário
+  // Limpa o formulário e volta para o modo de cadastro novo
   formCliente.reset();
+  idClienteEmEdicao = null;
+  botaoSalvar.textContent = "Salvar";
 
   // Busca o próximo código para o usuário já cadastrar o próximo cliente
   buscarProximoCodigo();

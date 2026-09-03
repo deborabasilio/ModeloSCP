@@ -9,6 +9,33 @@
   <body>
     <header class="page-header"><h1>Orçamentos</h1><p>Crie e acompanhe propostas comerciais.</p></header>
     <div class="container">
+      <!-- ÁREA DE VISUALIZAÇÃO / APROVAÇÃO DE UM ORÇAMENTO JÁ EXISTENTE -->
+      <!-- Só aparece quando a página é aberta como orcamentos.html?id=5, -->
+      <!-- o que acontece ao clicar em "Visualizar" na listagem do menu. -->
+      <div id="areaVisualizacao" class="oculto">
+        <div class="empty-state caixa-visualizacao-orcamento">
+          <p><strong>Orçamento nº:</strong> <span id="visCodigo"></span></p>
+          <p><strong>Cliente:</strong> <span id="visCliente"></span></p>
+          <p><strong>Data do Orçamento:</strong> <span id="visData"></span></p>
+          <p><strong>Data de Validade:</strong> <span id="visValidade"></span></p>
+          <p><strong>Status Atual:</strong> <span id="visStatus"></span></p>
+
+          <table class="tabela-registros tabela-visualizacao-orcamento">
+            <thead>
+              <tr><th>Produto</th><th>Qtde</th><th>Valor Unit.</th><th>Total</th></tr>
+            </thead>
+            <tbody id="visCorpoItens"></tbody>
+          </table>
+
+          <p class="total-visualizacao-orcamento"><strong>Valor Total do Orçamento:</strong> R$ <span id="visTotal"></span></p>
+
+          <div id="visAcoes" class="acoes-visualizacao-orcamento">
+            <button type="button" id="btnAprovarOrcamento" class="botao-secundario">Aprovar Orçamento</button>
+            <button type="button" id="btnReprovarOrcamento" class="botao-secundario">Reprovar Orçamento</button>
+          </div>
+        </div>
+      </div>
+
       <form id="formOrcamento">
         <label for="codigoOrcamento">Código do Orçamento:</label
         ><!--gera automaticamente buscando no banco-->

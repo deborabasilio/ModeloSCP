@@ -180,6 +180,41 @@ button.botao-secundario:hover {
   text-align: center;
 }
 
+/* Classe utilitária para esconder um elemento via JavaScript,
+   sem precisar de "style" espalhado pelos arquivos. */
+.oculto {
+  display: none;
+}
+
+/* =========================================
+   VISUALIZAÇÃO / APROVAÇÃO DE UM ORÇAMENTO
+   Usada em orcamentos.html quando a página é
+   aberta com "?id=" na URL.
+========================================= */
+.caixa-visualizacao-orcamento {
+  width: min(100%, 1040px);
+  margin: 0 auto 20px;
+  padding: 28px;
+  text-align: left;
+}
+
+.tabela-visualizacao-orcamento {
+  margin-top: 16px;
+}
+
+.total-visualizacao-orcamento {
+  margin-top: 16px;
+  font-size: 1.05rem;
+}
+
+.acoes-visualizacao-orcamento {
+  margin-top: 20px;
+}
+
+.acoes-visualizacao-orcamento button {
+  margin-right: 10px;
+}
+
 /* =========================================
    MENSAGEM DE SUCESSO / ERRO
    (usada pelos arquivos .js com id="mensagem")

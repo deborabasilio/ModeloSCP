@@ -45,6 +45,18 @@ const valorTotalOrcamentoInput = document.getElementById("valorTotalOrcamento");
 
 const mensagem = document.getElementById("mensagem");
 
+const areaVisualizacao = document.getElementById("areaVisualizacao");
+const visCodigo = document.getElementById("visCodigo");
+const visCliente = document.getElementById("visCliente");
+const visData = document.getElementById("visData");
+const visValidade = document.getElementById("visValidade");
+const visStatus = document.getElementById("visStatus");
+const visCorpoItens = document.getElementById("visCorpoItens");
+const visTotal = document.getElementById("visTotal");
+const visAcoes = document.getElementById("visAcoes");
+const btnAprovarOrcamento = document.getElementById("btnAprovarOrcamento");
+const btnReprovarOrcamento = document.getElementById("btnReprovarOrcamento");
+
 /*
   Aqui guardamos, na memória, os itens que o usuário já
   adicionou no orçamento (antes de clicar em "Salvar
@@ -314,7 +326,8 @@ formOrcamento.addEventListener("submit", async function (evento) {
     clienteid: clienteSelecSelect.value, 
     dt_orcamento: new Date().toISOString(),
     dt_validade_orcamento: new Date(validadeOrcamentoInput.value).toISOString(), 
-    vl_total_orcamento: valorTotalOrcamento 
+    vl_total_orcamento: valorTotalOrcamento,
+    status_orcamento: "PENDENTE"
   };
 
   const { data: orcamentoSalvo, error: erroOrcamento } = await supabaseClient
@@ -368,9 +381,108 @@ formOrcamento.addEventListener("submit", async function (evento) {
 
 /*
   =====================================================
+  VISUALIZAR / APROVAR / REPROVAR UM ORÇAMENTO EXISTENTE
+  =====================================================
+  Usado quando a página é aberta como "orcamentos.html?id=5",
+  o que acontece ao clicar em "Visualizar" na listagem do menu.
+*/
+async function carregarOrcamentoParaVisualizacao(idOrcamento) {
+  const { data: orcamento, error } = await supabaseClient
+    .from(TABELA_ORCAMENTO)
+    .select(`
+      orcamentoid,
+      dt_orcamento,
+      dt_validade_orcamento,
+      vl_total_orcamento,
+      status_orcamento,
+      clientes(nome_cliente),
+      orcamento_item(qt_produto, vl_unitario, vl_total, produtos(ds_produto))
+    `)
+    .eq("orcamentoid", idOrcamento)
+    .single();
+
+  if (error || !orcamento) {
+    mensagem.textContent = "Não foi possível carregar este orçamento.";
+    mensagem.className = "erro";
+    console.error(error);
+    return;
+  }
+
+  // Esconde o formulário de criação e mostra a área de visualização
+  formOrcamento.classList.add("oculto");
+  areaVisualizacao.classList.remove("oculto");
+
+  visCodigo.textContent = orcamento.orcamentoid;
+  visCliente.textContent = orcamento.clientes?.nome_cliente ?? "";
+  visData.textContent = new Date(orcamento.dt_orcamento).toLocaleString("pt-BR");
+  visValidade.textContent = new Date(orcamento.dt_validade_orcamento).toLocaleDateString("pt-BR");
+  visStatus.textContent = orcamento.status_orcamento;
+  visTotal.textContent = formatarMoeda(orcamento.vl_total_orcamento);
+
+  const itens = orcamento.orcamento_item || [];
+  visCorpoItens.innerHTML = itens.length === 0
+    ? '<tr><td colspan="4">Nenhum item encontrado.</td></tr>'
+    : itens.map((item) => `
+        <tr>
+          <td>${item.produtos?.ds_produto ?? ""}</td>
+          <td>${item.qt_produto}</td>
+          <td>R$ ${formatarMoeda(item.vl_unitario)}</td>
+          <td>R$ ${formatarMoeda(item.vl_total)}</td>
+        </tr>
+      `).join("");
+
+  // Só mostra os botões de Aprovar/Reprovar quando o orçamento ainda está pendente
+  if (orcamento.status_orcamento === "PENDENTE") {
+    visAcoes.classList.remove("oculto");
+  } else {
+    visAcoes.classList.add("oculto");
+  }
+}
+
+async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
+  const { error } = await supabaseClient
+    .from(TABELA_ORCAMENTO)
+    .update({ status_orcamento: novoStatus })
+    .eq("orcamentoid", idOrcamento);
+
+  if (error) {
+    mensagem.textContent = "Erro ao atualizar o status do orçamento: " + error.message;
+    mensagem.className = "erro";
+    console.error(error);
+    return;
+  }
+
+  mensagem.textContent = novoStatus === "FINALIZADO"
+    ? "Orçamento aprovado com sucesso!"
+    : "Orçamento reprovado.";
+  mensagem.className = "sucesso";
+
+  visStatus.textContent = novoStatus;
+  visAcoes.classList.add("oculto");
+}
+
+btnAprovarOrcamento?.addEventListener("click", () => {
+  atualizarStatusOrcamento(visCodigo.textContent, "FINALIZADO");
+});
+
+btnReprovarOrcamento?.addEventListener("click", () => {
+  atualizarStatusOrcamento(visCodigo.textContent, "REPROVADO");
+});
+
+/*
+  =====================================================
   QUANDO A PÁGINA ABRE
   =====================================================
+  Se a página foi aberta com "?id=5" na URL, mostramos a
+  visualização/aprovação em vez do formulário de criação.
 */
-mostrarProximoCodigo();
-carregarClientes();
-carregarProdutos();
+const parametrosUrl = new URLSearchParams(window.location.search);
+const idOrcamentoParaVisualizar = parametrosUrl.get("id");
+
+if (idOrcamentoParaVisualizar) {
+  carregarOrcamentoParaVisualizacao(idOrcamentoParaVisualizar);
+} else {
+  mostrarProximoCodigo();
+  carregarClientes();
+  carregarProdutos();
+}

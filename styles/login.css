@@ -67,9 +67,9 @@ form button { grid-column: 1 / -1; justify-self: end; width: auto; min-width: 16
 
 #formUser { width: min(100%, 420px); margin: 0 auto; grid-template-columns: 1fr; }
 #formUser button { grid-column: auto; width: 100%; margin-top: 12px; }
-body:has(#formUser) { display: grid; place-content: center; }
-body:has(#formUser) > h1 { width: min(100%, 420px); text-align: center; }
-body:has(#formUser) #mensagem { width: min(100%, 420px); min-height: 24px; margin: 18px auto 0; text-align: center; }
+.tela-login { display: grid; place-content: center; }
+.tela-login > h1 { width: min(100%, 420px); text-align: center; }
+.tela-login #mensagem { width: min(100%, 420px); min-height: 24px; margin: 18px auto 0; text-align: center; }
 
 @media (max-width: 650px) {
   body { padding: 24px 16px; }
@@ -80,7 +80,7 @@ body:has(#formUser) #mensagem { width: min(100%, 420px); min-height: 24px; margi
 }
 
 /* Tela de acesso */
-body:has(#formUser) {
+.tela-login {
   position: relative;
   overflow: hidden;
   background:
@@ -89,7 +89,7 @@ body:has(#formUser) {
     #0f1f3a;
 }
 
-body:has(#formUser)::before {
+.tela-login::before {
   position: fixed;
   inset: 0;
   z-index: -1;
@@ -99,14 +99,14 @@ body:has(#formUser)::before {
   content: "";
 }
 
-body:has(#formUser) > h1 {
+.tela-login > h1 {
   margin-bottom: 22px;
   color: #fff;
   font-size: 1.75rem;
   font-weight: 700;
 }
 
-body:has(#formUser) > h1::before {
+.tela-login > h1::before {
   display: block;
   width: fit-content;
   margin: 0 auto 12px;
@@ -162,12 +162,12 @@ body:has(#formUser) > h1::before {
   background: linear-gradient(135deg, #1d4ed8, #1e3a8a);
 }
 
-body:has(#formUser) #mensagem {
+.tela-login #mensagem {
   color: #e2e8f0;
 }
 
 /* Composição inspirada em um painel administrativo. */
-body:has(#formUser) {
+.tela-login {
   display: grid;
   grid-template-columns: minmax(0, 460px);
   grid-template-rows: auto auto auto;
@@ -180,11 +180,11 @@ body:has(#formUser) {
     #071d3a;
 }
 
-body:has(#formUser)::before {
+.tela-login::before {
   display: none;
 }
 
-body:has(#formUser) > h1 {
+.tela-login > h1 {
   grid-row: 1;
   grid-column: 1;
   align-self: center;
@@ -204,7 +204,7 @@ body:has(#formUser) > h1 {
   text-align: center;
 }
 
-body:has(#formUser) > h1::before {
+.tela-login > h1::before {
   display: none;
   content: none;
 }
@@ -220,7 +220,7 @@ body:has(#formUser) > h1::before {
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
 }
 
-body:has(#formUser) > h1::after {
+.tela-login > h1::after {
   max-width: 350px;
   margin-top: 14px;
   color: #b9cae0;
@@ -275,7 +275,7 @@ body:has(#formUser) > h1::after {
   background: #073b6d;
 }
 
-body:has(#formUser) #mensagem {
+.tela-login #mensagem {
   grid-row: 3;
   grid-column: 1;
   width: 100%;
@@ -285,12 +285,12 @@ body:has(#formUser) #mensagem {
 }
 
 @media (max-width: 850px) {
-  body:has(#formUser) {
+  .tela-login {
     grid-template-columns: minmax(0, 460px);
     padding: 28px 18px;
   }
 
-  body:has(#formUser) > h1 {
+  .tela-login > h1 {
     grid-row: 1;
     grid-column: 1;
     min-height: auto;
@@ -309,7 +309,7 @@ body:has(#formUser) #mensagem {
     grid-column: 1;
   }
 
-  body:has(#formUser) #mensagem {
+  .tela-login #mensagem {
     grid-row: 3;
     grid-column: 1;
   }

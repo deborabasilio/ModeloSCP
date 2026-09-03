@@ -32,11 +32,11 @@ const catProdSelect = document.getElementById("catProd");
 const descProdInput = document.getElementById("descProd");
 const obsProdInput = document.getElementById("obsProd");
 const valorVendaInput = document.getElementById("valorVenda");
+const qtdEstoqueProdInput = document.getElementById("qtdEstoqueProd");
 const dataCadastroProdInput = document.getElementById("dataCadastroProd");
 const statusProdSelect = document.getElementById("statusProd");
 const mensagem = document.getElementById("mensagem");
 const botaoSalvar = document.getElementById("botao");
-const listaProdutosTbody = document.getElementById("listaProdutos");
 
 let idProdutoEmEdicao = null;
 
@@ -127,7 +127,8 @@ async function carregarProdutoNoFormulario(idProduto) {
   descProdInput.value = produto.ds_produto;
   obsProdInput.value = produto.obs_produto ?? "";
   valorVendaInput.value = produto.vl_venda_produto;
-  
+  qtdEstoqueProdInput.value = produto.qt_estoque_produto ?? 0;
+
   // Se a data vier no formato ISO do banco (timestamp), convertemos para visualização
   let dataVisual = produto.dt_cadastro_produto;
   if (dataVisual && dataVisual.includes("T")) {
@@ -168,6 +169,7 @@ formProdutos.addEventListener("submit", async function (evento) {
   const descricao = descProdInput.value.trim();
   const observacao = obsProdInput.value.trim();
   const valorVenda = valorVendaInput.value;
+  const qtdEstoque = qtdEstoqueProdInput.value;
   const status = statusProdSelect.value;
 
   if (categoria === "") {
@@ -198,7 +200,8 @@ formProdutos.addEventListener("submit", async function (evento) {
     categoriaprodutoid: categoria,
     ds_produto: descricao,
     obs_produto: observacao,
-    vl_venda_produto: valorVenda, 
+    vl_venda_produto: valorVenda,
+    qt_estoque_produto: qtdEstoque,
     status_produto: status
   };
 
@@ -241,7 +244,6 @@ formProdutos.addEventListener("submit", async function (evento) {
   mensagem.className = "sucesso";
 
   voltarParaModoCadastro();
-  carregarListaProdutos();
 
   setTimeout(() => {
     mensagem.textContent = "";
@@ -253,11 +255,21 @@ formProdutos.addEventListener("submit", async function (evento) {
   =====================================================
   QUANDO A PÁGINA ABRE
   =====================================================
+  Se a página foi aberta com "?id=5" na URL (o que acontece
+  quando clicamos em "Editar" na listagem do menu), já
+  carregamos os dados desse produto no formulário.
 */
 async function iniciarPagina() {
-  mostrarProximoCodigo();
   await carregarCategorias();
-  carregarListaProdutos();
+
+  const parametros = new URLSearchParams(window.location.search);
+  const idParaEditar = parametros.get("id");
+
+  if (idParaEditar) {
+    await carregarProdutoNoFormulario(idParaEditar);
+  } else {
+    mostrarProximoCodigo();
+  }
 }
 
 iniciarPagina();

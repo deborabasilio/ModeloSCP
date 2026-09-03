@@ -24,6 +24,10 @@ const formCategoria = document.getElementById("categoriaProdutos");
 const codigoCategoriaInput = document.getElementById("codigoCategoria");
 const descricaoCategoriaInput = document.getElementById("descricaoCategoria");
 const mensagem = document.getElementById("mensagem");
+const botaoSalvar = document.getElementById("botao");
+
+// Guarda o ID da categoria quando estamos editando (null = cadastro novo)
+let idCategoriaEmEdicao = null;
 
 /*
   =====================================================
@@ -61,8 +65,48 @@ async function mostrarProximoCodigo() {
   codigoCategoriaInput.value = (count ?? 0) + 1;
 }
 
-// Assim que a página abre, já mostramos o próximo código.
-mostrarProximoCodigo();
+/*
+  =====================================================
+  FUNÇÃO PARA CARREGAR UMA CATEGORIA PARA EDIÇÃO
+  =====================================================
+  Usada quando a página é aberta com "?id=5" na URL,
+  o que acontece ao clicar em "Editar" na listagem do menu.
+*/
+async function carregarCategoriaNoFormulario(idCategoria) {
+  const { data: categoria, error } = await supabaseClient
+    .from(NOME_TABELA)
+    .select("*")
+    .eq("categoriaprodutoid", idCategoria)
+    .single();
+
+  if (error || !categoria) {
+    mensagem.textContent = "Não foi possível carregar esta categoria.";
+    mensagem.className = "erro";
+    console.error(error);
+    return;
+  }
+
+  codigoCategoriaInput.value = categoria.categoriaprodutoid;
+  descricaoCategoriaInput.value = categoria.ds_categoria_produto;
+
+  idCategoriaEmEdicao = categoria.categoriaprodutoid;
+  botaoSalvar.textContent = "Atualizar Categoria";
+}
+
+/*
+  =====================================================
+  QUANDO A PÁGINA ABRE
+  =====================================================
+*/
+const parametrosUrl = new URLSearchParams(window.location.search);
+const idCategoriaParaEditar = parametrosUrl.get("id");
+
+if (idCategoriaParaEditar) {
+  carregarCategoriaNoFormulario(idCategoriaParaEditar);
+} else {
+  // Mostra o próximo código apenas quando é um cadastro novo
+  mostrarProximoCodigo();
+}
 
 /*
   =====================================================
@@ -87,16 +131,29 @@ formCategoria.addEventListener("submit", async function (evento) {
     IMPORTANTE: o nome da propriedade "descricao_categoria"
     precisa ser igual ao nome da coluna no Supabase.
   */
-  const novaCategoria = {
+  const dadosCategoria = {
     ds_categoria_produto: descricaoCategoria
   };
 
-  const { error } = await supabaseClient
-    .from(NOME_TABELA)
-    .insert(novaCategoria);
+  let erroSupabase = null;
 
-  if (error) {
-    mensagem.textContent = "Erro ao salvar categoria: " + error.message;
+  if (idCategoriaEmEdicao) {
+    const { error } = await supabaseClient
+      .from(NOME_TABELA)
+      .update(dadosCategoria)
+      .eq("categoriaprodutoid", idCategoriaEmEdicao);
+
+    erroSupabase = error;
+  } else {
+    const { error } = await supabaseClient
+      .from(NOME_TABELA)
+      .insert(dadosCategoria);
+
+    erroSupabase = error;
+  }
+
+  if (erroSupabase) {
+    mensagem.textContent = "Erro ao salvar categoria: " + erroSupabase.message;
     mensagem.className = "erro";
 
     setTimeout(() => {
@@ -107,10 +164,14 @@ formCategoria.addEventListener("submit", async function (evento) {
     return;
   }
 
-  mensagem.textContent = "Categoria salva com sucesso!";
+  mensagem.textContent = idCategoriaEmEdicao
+    ? "Categoria atualizada com sucesso!"
+    : "Categoria salva com sucesso!";
   mensagem.className = "sucesso";
 
   formCategoria.reset();
+  idCategoriaEmEdicao = null;
+  botaoSalvar.textContent = "Salvar Categoria";
 
   // Depois de salvar, atualizamos o preview do próximo código.
   mostrarProximoCodigo();

@@ -257,6 +257,40 @@
 .btn-excluir:hover {
   background-color: #dc2626;
 }
+
+/* Botão de aprovar orçamento (aparece quando o orçamento está pendente) */
+.btn-aprovar {
+  background-color: #16a34a;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+.btn-aprovar:hover {
+  background-color: #15803d;
+}
+
+/* Botão de reprovar orçamento (aparece quando o orçamento está pendente) */
+.btn-reprovar {
+  background-color: #6b7280;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+.btn-reprovar:hover {
+  background-color: #4b5563;
+}
 /* =========================================
    NOVA BARRA DE FILTROS DINÂMICA
    ========================================= */
@@ -289,4 +323,57 @@
 .barra-filtro select:focus,
 .barra-filtro input:focus {
   border-color: var(--blue);
+}
+
+/* =========================================
+   PAINEL (DASHBOARD)
+   ========================================= */
+.painel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.painel-card {
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  color: var(--text);
+}
+
+.painel-card h3 {
+  margin: 0 0 10px;
+  color: var(--navy);
+  font-size: 1rem;
+}
+
+.painel-card table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.painel-card th,
+.painel-card td {
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 0.86rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.painel-card.verde {
+  background: #d4edda;
+}
+
+.painel-card.amarelo {
+  background: #fff3cd;
+}
+
+.painel-card.vermelho {
+  background: #f8d7da;
+}
+
+.painel-card.azul {
+  background: #cce5ff;
 }
