@@ -7,58 +7,88 @@
     <link rel="stylesheet" href="styles/admin.css" />
   </head>
   <body>
-    <header class="page-header"><h1>Orçamentos</h1><p id="descricaoHeader">Acompanhe propostas comerciais.</p></header>
+    <header class="page-header">
+      <h1>Orçamentos</h1>
+      <p id="descricaoHeader">Acompanhe propostas comerciais.</p>
+    </header>
     <div class="container">
       <!-- ÁREA DE VISUALIZAÇÃO / APROVAÇÃO DE UM ORÇAMENTO JÁ EXISTENTE -->
-      <!-- Só aparece quando a página é aberta como orcamentos.html?id=5, -->
-      <!-- o que acontece ao clicar em "Visualizar" na listagem do menu. -->
       <div id="areaVisualizacao" class="oculto">
         <div class="empty-state caixa-visualizacao-orcamento">
+          <!-- Botão de impressão atualizado com descrição e sem emoji -->
+          <button type="button" id="btnImprimirVis" class="btn-imprimir-vis">
+            Imprimir Orçamento em PDF
+          </button>
+
           <p><strong>Orçamento nº:</strong> <span id="visCodigo"></span></p>
           <p><strong>Cliente:</strong> <span id="visCliente"></span></p>
           <p><strong>Data do Orçamento:</strong> <span id="visData"></span></p>
-          <p><strong>Data de Validade:</strong> <span id="visValidade"></span></p>
+          <p>
+            <strong>Data de Validade:</strong> <span id="visValidade"></span>
+          </p>
           <p><strong>Status Atual:</strong> <span id="visStatus"></span></p>
 
           <table class="tabela-registros tabela-visualizacao-orcamento">
             <thead>
-              <tr><th>Produto</th><th>Qtde</th><th>Valor Unit.</th><th>Total</th></tr>
+              <tr>
+                <th>Produto</th>
+                <th>Qtde</th>
+                <th>Valor Unit.</th>
+                <th>Total</th>
+              </tr>
             </thead>
             <tbody id="visCorpoItens"></tbody>
           </table>
 
-          <p class="total-visualizacao-orcamento"><strong>Valor Total do Orçamento:</strong> R$ <span id="visTotal"></span></p>
+          <p class="total-visualizacao-orcamento">
+            <strong>Valor Total do Orçamento:</strong> R$
+            <span id="visTotal"></span>
+          </p>
 
-          <!--
-            CORRIGIDO: o botão "Voltar" ficava dentro da mesma div que Aprovar/Reprovar,
-            que só era exibida quando o orçamento estava PENDENTE. Isso fazia o Voltar
-            sumir junto quando o orçamento já estava Finalizado ou Reprovado.
-            Agora "visAcoesAprovacao" controla só Aprovar/Reprovar (via status), e o
-            Voltar fica fora dela, sempre visível.
-          -->
           <div class="acoes-visualizacao-orcamento">
             <div id="visAcoesAprovacao">
-              <button type="button" id="btnAprovarOrcamento" class="botao-secundario">Aprovar Orçamento</button>
-              <button type="button" id="btnReprovarOrcamento" class="botao-secundario">Reprovar Orçamento</button>
+              <button
+                type="button"
+                id="btnAprovarOrcamento"
+                class="botao-secundario"
+              >
+                Aprovar Orçamento
+              </button>
+              <button
+                type="button"
+                id="btnReprovarOrcamento"
+                class="botao-secundario"
+              >
+                Reprovar Orçamento
+              </button>
             </div>
-            <button type="button" id="botaoVoltarVis" onclick="window.location.href='menu.html'">Voltar</button>
+            <button
+              type="button"
+              id="botaoVoltarVis"
+              onclick="window.location.href = 'menu.html'"
+            >
+              Voltar
+            </button>
           </div>
         </div>
       </div>
 
       <form id="formOrcamento">
-        <label for="codigoOrcamento">Código do Orçamento:</label
-        ><!--gera automaticamente buscando no banco-->
+        <label for="codigoOrcamento">Código do Orçamento:</label>
         <input type="text" id="codigoOrcamento" readonly />
 
         <label for="clienteSelec">Cliente selecionado:</label>
-        <select id="clienteSelec" required>
-          <option value="" disabled selected>Selecione</option>
-          <!--as opções aqui embaixo são preenchidas pelo orcamentos.js, buscando os clientes do banco-->
-        </select>
+        <input
+          type="text"
+          id="clienteSelec"
+          list="listaClientes"
+          placeholder="Digite para buscar o cliente..."
+          autocomplete="new-off-clientes"
+          required
+        />
+        <datalist id="listaClientes"></datalist>
 
         <label for="dataOrcamento">Data do Orçamento:</label>
-        <!--gera automaticamente a data e hora-->
         <input type="text" id="dataOrcamento" readonly required />
 
         <label for="validadeOrcamento">Data de Validade:</label>
@@ -67,33 +97,31 @@
         <h3>Itens do Orçamento</h3>
 
         <label for="produtoOrc">Produto:</label>
-        <select id="produtoOrc">
-          <option value="" selected>Selecione um produto</option>
-          <!--as opções aqui embaixo são preenchidas pelo orcamentos.js, buscando os produtos ATIVOS do banco-->
-        </select>
+        <input
+          type="text"
+          id="produtoOrc"
+          list="listaProdutosOrc"
+          autocomplete="new-off-produtos"
+          placeholder="Digite para buscar o produto..."
+        />
+        <datalist id="listaProdutosOrc"></datalist>
 
         <label for="descProdutoOrc">Descrição:</label>
-        <input type="text" id="descProdutoOrc" readonly>
-        <!--preenchida sozinha quando o produto é selecionado-->
+        <input type="text" id="descProdutoOrc" readonly />
 
         <label for="qtdeProdutoOrc">Quantidade:</label>
-        <input type="number" id="qtdeProdutoOrc" min="1" value="1">
+        <input type="number" id="qtdeProdutoOrc" min="1" value="1" />
 
         <label for="valorUnitario">Valor Unitário:</label>
-        <input type="text" id="valorUnitario" readonly>
-        <!--preenchido sozinho com o valor de venda do produto-->
+        <input type="text" id="valorUnitario" readonly />
 
         <label for="valorTotalItem">Valor Total do Item:</label>
-        <input type="text" id="valorTotalItem" readonly>
-        <!--Valor total do item = Quantidade × Valor unitário, calculado sozinho-->
+        <input type="text" id="valorTotalItem" readonly />
 
-        <button type="button" id="btnAdicionarItem" class="botao-secundario">Adicionar Item</button>
+        <button type="button" id="btnAdicionarItem" class="botao-secundario">
+          Adicionar Item
+        </button>
 
-        <!--
-          Lista dos itens que já foram adicionados neste orçamento.
-          O orcamentos.js preenche essa tabela e recalcula o total
-          toda vez que um item é adicionado ou removido.
-        -->
         <div class="lista-itens-orcamento">
           <table>
             <thead>
@@ -105,18 +133,21 @@
                 <th></th>
               </tr>
             </thead>
-            <tbody id="corpoListaItens">
-              <!-- linhas geradas pelo orcamentos.js -->
-            </tbody>
+            <tbody id="corpoListaItens"></tbody>
           </table>
         </div>
 
         <label for="valorTotalOrcamento">Valor Total do Orçamento:</label>
-        <!--soma de todos os itens adicionados, recalculada automaticamente-->
-        <input type="text" id="valorTotalOrcamento" readonly value="0,00">
+        <input type="text" id="valorTotalOrcamento" readonly value="R$ 0,00" />
 
         <button type="submit">Salvar</button>
-        <button type="button" id="botaoVoltarForm" onclick="window.location.href='menu.html'">Voltar</button>
+        <button
+          type="button"
+          id="botaoVoltarForm"
+          onclick="window.location.href = 'menu.html'"
+        >
+          Voltar
+        </button>
       </form>
 
       <p id="mensagem"></p>

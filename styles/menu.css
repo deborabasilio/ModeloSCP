@@ -2,10 +2,6 @@
   =====================================================
   MENU.CSS
   =====================================================
-  A estrutura (o esqueleto do menu) continua exatamente
-  a mesma de antes. O que mudou foram só as cores e a
-  fonte, pra ficar igual ao padrão usado no login.css
-  e no admin.css.
 */
 
 :root {
@@ -26,58 +22,56 @@
 
 /* Container do menu (Nav) */
 .menu-principal {
-  background-color: var(--navy); /* Cor de fundo da barra */
-  height: 80px; /* Altura do nav */
+  background-color: var(--navy);
+  height: 80px;
 }
 
 /* Flexbox do menu */
 .menu-principal ul {
   display: flex;
-  align-items: center; /* Centraliza verticalmente a imagem e os links */
-  justify-content: flex-start; /* Alinha tudo à esquerda por padrão */
-  list-style-type: none; /* Remove as bolinhas do li */
+  align-items: center;
+  justify-content: flex-start;
+  list-style-type: none;
   margin: 0;
-  padding: 0 20px; /* Dá um respiro nas laterais */
+  padding: 0 20px;
   height: 100%;
 }
 
 /* Espaçamento entre o logotipo e o primeiro item do menu */
 .company-logo {
-  margin-right: 30px; /* Mantém os outros menus próximos à imagem */
+  margin-right: 30px;
 }
 
 /* Ajusta o tamanho da imagem e aplica bordas arredondadas */
 .company-logo img {
-  max-height: 50px; /* Ajuste conforme o tamanho do seu nav */
-  display: block; /* Remove o pequeno espaço fantasma abaixo da imagem */
-  border-radius: 8px; /* Bordas arredondadas na logo */
+  max-height: 50px;
+  display: block;
+  border-radius: 8px;
 }
 
 /* Estilo dos links (os botões clicáveis) */
 .menu-principal a {
-  display: block; /* Torna toda a área clicável */
-  color: #ffffff; /* Cor da fonte */
-  text-decoration: none; /* Remove o sublinhado padrão */
-  padding: 16px 24px; /* Espaçamento interno (topo/baixo e laterais) */
+  display: block;
+  color: #ffffff;
+  text-decoration: none;
+  padding: 16px 24px;
   font-family: "Segoe UI", Arial, sans-serif;
-  transition: 0.3s; /* Deixa a mudança de cor suave */
+  transition: 0.3s;
 }
 
 /* Efeito ao passar o mouse por cima (Hover) */
 .menu-principal a:hover {
-  background-color: #1d3a63; /* Muda a cor de fundo */
+  background-color: #1d3a63;
 }
 
 /* =========================================
    Estilos do Menu Dropdown (Submenu)
    ========================================= */
 
-/* Transforma o item principal em uma "âncora" para o submenu */
 .dropdown {
   position: relative;
 }
 
-/* Estilo do submenu oculto por padrão */
 .menu-principal .dropdown-content {
   display: none;
   position: absolute;
@@ -90,13 +84,10 @@
   border-radius: 0 0 8px 8px;
   overflow: hidden;
   top: 100%;
-
-  /* AS DUAS LINHAS DE CORREÇÃO ESTÃO AQUI: */
-  height: auto;         /* Cancela a altura limite e permite mostrar todos os botões */
-  align-items: stretch; /* Garante que os botões preencham toda a largura do submenu */
+  height: auto;
+  align-items: stretch;
 }
 
-/* Ajustes visuais para os links de dentro do submenu */
 .dropdown-content a {
   padding: 14px 20px;
   font-size: 15px;
@@ -104,17 +95,14 @@
   border-bottom: 1px solid #1d3a63;
 }
 
-/* Remove a linha da última opção */
 .dropdown-content li:last-child a {
   border-bottom: none;
 }
 
-/* Efeito ao passar o mouse nas opções do submenu */
 .dropdown-content a:hover {
   background-color: #0f2038;
 }
 
-/* Classe ativada pelo JAVASCRIPT para mostrar o menu */
 .mostrar-dropdown {
   display: flex !important;
 }
@@ -122,7 +110,6 @@
 /* =========================================
    Empurra o Sair para a direita
    ========================================= */
-/* O sinal ">" garante que só o "Sair" vá para a direita, ignorando os itens do submenu */
 .menu-principal > ul > li:last-child {
   margin-left: auto;
 }
@@ -135,14 +122,10 @@
    ESTILOS DA ÁREA DE PESQUISA E TABELA
    ========================================= */
 
-/* Esconde a área de pesquisa e tabela quando a página carrega */
 #area-pesquisa {
   display: none;
 }
 
-/* Dá um respiro e centraliza o conteúdo abaixo do menu */
-/* CORRIGIDO: aumentado de 1040px para 1300px, para dar mais espaço
-   à barra de filtro e à tabela (evita quebra de linha no "Filtrar por"). */
 .conteudo-pagina {
   max-width: 1300px;
   margin: 40px auto;
@@ -151,12 +134,6 @@
   color: var(--text);
 }
 
-/*
-  CORRIGIDO: título e barra de filtro agora ficam em linhas separadas
-  (um embaixo do outro), em vez de dividir a mesma linha com
-  "justify-content: space-between". Assim a barra de filtro tem a
-  largura inteira disponível para não precisar quebrar.
-*/
 .cabecalho-pesquisa {
   display: flex;
   flex-direction: column;
@@ -170,11 +147,6 @@
   margin: 0;
 }
 
-/*
-  CORRIGIDO: flex-wrap: nowrap trava tudo numa linha só. Cada campo
-  ganha uma largura flexível (flex-basis) em vez de largura fixa,
-  então eles crescem/encolhem juntos, mas sem quebrar linha.
-*/
 .barra-filtro {
   display: flex;
   flex-wrap: nowrap;
@@ -196,7 +168,7 @@
 
 .barra-filtro select,
 .barra-filtro input {
-  min-width: 0; /* permite o campo encolher dentro do flex, sem forçar quebra */
+  min-width: 0;
   padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -240,12 +212,10 @@
   background-color: #1d4ed8;
 }
 
-/* Em telas bem estreitas, permite quebrar de novo (senão fica ilegível) */
 @media (max-width: 700px) {
   .barra-filtro {
     flex-wrap: wrap;
   }
-
   .barra-filtro #filtro-coluna,
   .barra-filtro #filtro-condicao,
   .barra-filtro #filtro-valor {
@@ -261,7 +231,7 @@
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
   border-radius: 12px;
-  overflow: hidden; /* Mantém as bordas arredondadas na tabela */
+  overflow: hidden;
 }
 
 .tabela-clientes th,
@@ -271,19 +241,16 @@
   border-bottom: 1px solid var(--border);
 }
 
-/* Cor do cabeçalho da tabela */
 .tabela-clientes th {
   background-color: #eef2f8;
   color: var(--navy);
   font-weight: bold;
 }
 
-/* Efeito ao passar o mouse nas linhas da tabela */
 .tabela-clientes tbody tr:hover {
   background-color: #f8fafc;
 }
 
-/* Botão de editar dentro da tabela */
 .btn-editar {
   background-color: #f59e0b;
   color: white;
@@ -299,7 +266,6 @@
   background-color: #d97706;
 }
 
-/* Botão de excluir dentro da tabela */
 .btn-excluir {
   background-color: #ef4444;
   color: white;
@@ -309,7 +275,7 @@
   cursor: pointer;
   font-family: inherit;
   font-weight: 700;
-  margin-left: 8px; /* Cria um pequeno espaço entre o botão Editar e Excluir */
+  margin-left: 8px;
   transition: 0.3s;
 }
 
@@ -317,7 +283,23 @@
   background-color: #dc2626;
 }
 
-/* Botão de aprovar orçamento (aparece quando o orçamento está pendente) */
+.btn-imprimir {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 6px 12px;          
+  border-radius: 6px;         
+  cursor: pointer;
+  font-weight: 700;  
+  font-family: inherit;         
+  margin-left: 8px;           
+  transition: 0.3s;
+}
+
+.btn-imprimir:hover {
+  background-color: #2563eb;
+}
+
 .btn-aprovar {
   background-color: #16a34a;
   color: white;
@@ -334,7 +316,6 @@
   background-color: #15803d;
 }
 
-/* Botão de reprovar orçamento (aparece quando o orçamento está pendente) */
 .btn-reprovar {
   background-color: #6b7280;
   color: white;
@@ -351,43 +332,59 @@
   background-color: #4b5563;
 }
 
+.btn-editar,
+.btn-excluir,
+.btn-aprovar,
+.btn-reprovar,
+.btn-imprimir {
+  vertical-align: middle;
+}
+
 /* =========================================
    PAINEL (DASHBOARD)
    ========================================= */
 .painel-grid {
-  display: grid;
+  display: grid; /* Volta a usar o formato de grade adaptável */
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
+  gap: 24px;
 }
 
+/* Torna os cards do painel retangulares e clicáveis */
 .painel-card {
   border-radius: var(--radius);
-  padding: 16px 20px;
+  padding: 20px;
   color: var(--text);
+  
+  /* Altura mínima para deixar os retângulos um pouco mais altos que antes */
+  min-height: 140px;
+  
+  /* Centraliza o conteúdo no meio do retângulo */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  
+  /* Efeitos de clique */
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.painel-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
 .painel-card h3 {
-  margin: 0 0 10px;
+  margin: 0;
   color: var(--navy);
-  font-size: 1rem;
+  font-size: 1.2rem;
+  line-height: 1.4;
 }
 
-.painel-card table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--surface);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.painel-card th,
-.painel-card td {
-  padding: 8px 10px;
-  text-align: left;
-  font-size: 0.86rem;
-  border-bottom: 1px solid var(--border);
-}
-
+/* =========================================
+   CORES DOS RETÂNGULOS (NÃO APAGUE)
+   ========================================= */
 .painel-card.verde {
   background: #d4edda;
 }
@@ -400,6 +397,10 @@
   background: #f8d7da;
 }
 
-.painel-card.azul {
-  background: #cce5ff;
+/* =========================================
+   FORÇAR MAIÚSCULAS NOS CAMPOS DE TEXTO
+   ========================================= */
+input[type="text"],
+textarea {
+  text-transform: uppercase;
 }

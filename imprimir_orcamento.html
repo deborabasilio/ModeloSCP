@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Impressão de Orçamento</title>
+  
+  <link rel="stylesheet" href="styles/imprimir_orcamento.css">
+</head>
+<body>
+
+  <!-- Botões de Controle (Ocultos na Impressão) -->
+  <div class="controles-tela">
+    <button class="btn btn-imprimir" onclick="window.print()">Imprimir Novamente</button>
+    <button class="btn btn-fechar" onclick="window.close()">Fechar Guia</button>
+  </div>
+
+  <div class="folha-a4">
+    <!-- CABEÇALHO -->
+    <div class="cabecalho-empresa">
+      <div>
+        <h1>GIRO PNEUS</h1>
+        <p>Comércio de Pneus e Serviços. CNPJ: 12.923.293/0002-23</p>
+      </div>
+      <div class="info-doc">
+        <h2>ORÇAMENTO COMERCIAL</h2>
+        <p>Nº <strong id="doc-numero">Carregando...</strong></p>
+      </div>
+    </div>
+
+    <!-- DADOS DO CLIENTE E ORÇAMENTO -->
+    <div class="sessao-dados">
+      <div class="bloco-dados">
+        <h3>Dados do Cliente</h3>
+        <strong>Nome:</strong> <span id="doc-cliente"></span><br>
+        <strong>CPF/CNPJ:</strong> <span id="doc-cpf"></span>
+      </div>
+      
+      <div class="bloco-dados">
+        <h3>Detalhes do Orçamento</h3>
+        <strong>Data de Emissão:</strong> <span id="doc-data"></span><br>
+        <strong>Data de Validade:</strong> <span id="doc-validade"></span><br>
+        <strong>Status:</strong> <span id="doc-status"></span>
+      </div>
+    </div>
+
+    <!-- TABELA DE ITENS -->
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Qtde</th>
+          <th class="num">Valor Unitário</th>
+          <th class="num">Total do Item</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-itens-corpo">
+        <tr><td colspan="4">Buscando itens...</td></tr>
+      </tbody>
+    </table>
+
+    <!-- TOTAL -->
+    <div class="bloco-total">
+      Valor Total do Orçamento:<br>
+      <span id="doc-total">R$ 0,00</span>
+    </div>
+  </div>
+
+  <!-- Biblioteca do Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="scripts/imprimir_orcamento.js"></script>
+</body>
+</html>

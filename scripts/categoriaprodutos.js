@@ -202,3 +202,26 @@ formCategoria.addEventListener("submit", async function (evento) {
     mensagem.className = "";
   }, 5000);
 });
+/*
+  =====================================================
+  FORÇAR LETRAS MAIÚSCULAS NOS CAMPOS DE TEXTO
+  =====================================================
+*/
+document.addEventListener("DOMContentLoaded", function () {
+  // Seleciona todos os inputs de texto e textareas da página atual
+  const camposTexto = document.querySelectorAll('input[type="text"], textarea');
+
+  camposTexto.forEach(campo => {
+    campo.addEventListener('input', function () {
+      // Guarda a posição atual do cursor para não pular pro final ao digitar no meio do texto
+      const inicioCursor = this.selectionStart;
+      const fimCursor = this.selectionEnd;
+      
+      // Converte o valor para maiúsculas
+      this.value = this.value.toUpperCase();
+      
+      // Restaura a posição do cursor
+      this.setSelectionRange(inicioCursor, fimCursor);
+    });
+  });
+});

@@ -8,7 +8,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_MHgrDJpm8wa4mGTJWPR0sg_08Bc9dut";
 
 const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
-  SUPABASE_ANON_KEY
+  SUPABASE_ANON_KEY,
 );
 
 /*
@@ -27,6 +27,64 @@ const botaoSalvar = document.getElementById("botao");
 // Guarda o ID do cliente quando estamos editando (null = cadastro novo)
 let idClienteEmEdicao = null;
 
+/*
+  =====================================================
+  FUNÇÃO PARA FORMATAR CPF OU CNPJ CONFORME O TIPO SELECIONADO
+  =====================================================
+*/
+function formatarCpfCnpj(valorDigitado, tipo) {
+  let numeros = valorDigitado.replace(/\D/g, "");
+
+  if (tipo === "F") {
+    // CPF: 000.000.000-00
+    numeros = numeros.slice(0, 11);
+    numeros = numeros.replace(/(\d{3})(\d)/, "$1.$2");
+    numeros = numeros.replace(/(\d{3})(\d)/, "$1.$2");
+    numeros = numeros.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  } else if (tipo === "J") {
+    // CNPJ: 00.000.000/0000-00
+    numeros = numeros.slice(0, 14);
+    numeros = numeros.replace(/(\d{2})(\d)/, "$1.$2");
+    numeros = numeros.replace(/(\d{3})(\d)/, "$1.$2");
+    numeros = numeros.replace(/(\d{3})(\d)/, "$1/$2");
+    numeros = numeros.replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+  }
+
+  return numeros;
+}
+
+// Enquanto o usuário digita o CPF/CNPJ, aplica a máscara do tipo já selecionado
+cpfCnpjClienteInput.addEventListener("input", function () {
+  cpfCnpjClienteInput.value = formatarCpfCnpj(
+    cpfCnpjClienteInput.value,
+    tipoClienteInput.value,
+  );
+});
+
+// Quando o usuário troca o Tipo de Cliente, reaplica a máscara certa
+// e libera/limpa o campo de documento
+tipoClienteInput.addEventListener("change", function () {
+  const tipo = tipoClienteInput.value;
+
+  if (tipo === "") {
+    cpfCnpjClienteInput.value = "";
+    cpfCnpjClienteInput.disabled = true;
+    cpfCnpjClienteInput.placeholder = "Selecione o tipo primeiro";
+    return;
+  }
+
+  cpfCnpjClienteInput.disabled = false;
+  cpfCnpjClienteInput.placeholder =
+    tipo === "F" ? "000.000.000-00" : "00.000.000/0000-00";
+
+  // Reformata o que já estiver digitado, caso o usuário troque o tipo depois
+  cpfCnpjClienteInput.value = formatarCpfCnpj(cpfCnpjClienteInput.value, tipo);
+});
+
+// Estado inicial: campo bloqueado até escolher o tipo
+cpfCnpjClienteInput.disabled = true;
+cpfCnpjClienteInput.placeholder = "Selecione o tipo primeiro";
+
 // =====================================================
 // PROTEÇÃO DE ROTA E PERMISSÕES
 // =====================================================
@@ -36,7 +94,8 @@ if (!usuarioLogadoTexto) {
   window.location.href = "login.html"; // Expulsa se não estiver logado
 } else {
   const usuarioLogado = JSON.parse(usuarioLogadoTexto);
-  const ehAdmin = String(usuarioLogado.tipo_usuario).trim().toUpperCase() !== "PADRAO";
+  const ehAdmin =
+    String(usuarioLogado.tipo_usuario).trim().toUpperCase() !== "PADRAO";
   const usuarioPodeEditar = ehAdmin || usuarioLogado.pode_editar === true;
 
   const parametrosUrl = new URLSearchParams(window.location.search);
@@ -123,13 +182,12 @@ if (idClienteParaEditar) {
   buscarProximoCodigo();
 }
 
-
 /*
   =====================================================
   EVENTO DE ENVIO DO FORMULÁRIO
   =====================================================
 */
-formCliente.addEventListener("submit", async function(evento) {
+formCliente.addEventListener("submit", async function (evento) {
   evento.preventDefault();
 
   const tipoCliente = tipoClienteInput.value;
@@ -139,7 +197,7 @@ formCliente.addEventListener("submit", async function(evento) {
   const dadosCliente = {
     tipo_cliente: tipoCliente,
     cpf_cnpj_cliente: cpfCnpjCliente,
-    nome_cliente: nomeCliente
+    nome_cliente: nomeCliente,
   };
 
   let erroSupabase = null;
@@ -166,13 +224,13 @@ formCliente.addEventListener("submit", async function(evento) {
 
   if (erroSupabase) {
     mensagem.textContent = "Erro ao salvar cliente: " + erroSupabase.message;
-    mensagem.className = "erro"; 
-    
+    mensagem.className = "erro";
+
     setTimeout(() => {
-        mensagem.textContent = "";
-        mensagem.className = "";
+      mensagem.textContent = "";
+      mensagem.className = "";
     }, 5000);
-    
+
     return;
   }
 
@@ -190,7 +248,30 @@ formCliente.addEventListener("submit", async function(evento) {
   buscarProximoCodigo();
 
   setTimeout(() => {
-      mensagem.textContent = ""; 
-      mensagem.className = "";  
+    mensagem.textContent = "";
+    mensagem.className = "";
   }, 5000);
+});
+/*
+  =====================================================
+  FORÇAR LETRAS MAIÚSCULAS NOS CAMPOS DE TEXTO
+  =====================================================
+*/
+document.addEventListener("DOMContentLoaded", function () {
+  // Seleciona todos os inputs de texto e textareas da página atual
+  const camposTexto = document.querySelectorAll('input[type="text"], textarea');
+
+  camposTexto.forEach((campo) => {
+    campo.addEventListener("input", function () {
+      // Guarda a posição atual do cursor para não pular pro final ao digitar no meio do texto
+      const inicioCursor = this.selectionStart;
+      const fimCursor = this.selectionEnd;
+
+      // Converte o valor para maiúsculas
+      this.value = this.value.toUpperCase();
+
+      // Restaura a posição do cursor
+      this.setSelectionRange(inicioCursor, fimCursor);
+    });
+  });
 });

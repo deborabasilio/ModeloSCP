@@ -1,0 +1,150 @@
+
+:root {
+      --cor-texto: #1e293b;
+      --cor-borda: #cbd5e1;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      color: var(--cor-texto);
+      margin: 0;
+      padding: 20px;
+      background: #f1f5f9;
+    }
+
+    .folha-a4 {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 40px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* Cabeçalho da Empresa */
+    .cabecalho-empresa {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--cor-texto);
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+
+    .cabecalho-empresa h1 {
+      margin: 0;
+      font-size: 24px;
+      color: #0b4e8e; /* Cor da Giro Pneus */
+      text-transform: uppercase;
+    }
+
+    .cabecalho-empresa p {
+      margin: 5px 0 0;
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .info-doc h2 {
+      margin: 0;
+      font-size: 20px;
+      text-align: right;
+    }
+
+    /* Sessão de Dados (Cliente e Orçamento) */
+    .sessao-dados {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .bloco-dados {
+      width: 48%;
+      padding: 15px;
+      background: #f8fafc;
+      border: 1px solid var(--cor-borda);
+      border-radius: 6px;
+    }
+
+    .bloco-dados h3 {
+      margin: 0 0 10px 0;
+      font-size: 15px;
+      border-bottom: 1px solid var(--cor-borda);
+      padding-bottom: 5px;
+    }
+
+    /* Tabela de Itens */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--cor-borda);
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #e2e8f0;
+      font-weight: bold;
+    }
+
+    td.num {
+      text-align: right;
+    }
+
+    /* Totais */
+    .bloco-total {
+      text-align: right;
+      font-size: 18px;
+    }
+
+    .bloco-total span {
+      font-size: 22px;
+      font-weight: bold;
+      color: #0b4e8e;
+    }
+
+    /* Botões flutuantes (Não aparecem na impressão) */
+    .controles-tela {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      margin: 0 10px;
+      font-size: 14px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #fff;
+    }
+
+    .btn-imprimir { background-color: #3b82f6; }
+    .btn-fechar { background-color: #64748b; }
+
+    /* =========================================
+       REGRAS EXCLUSIVAS PARA A IMPRESSORA
+       ========================================= */
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+      }
+      .folha-a4 {
+        box-shadow: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      .controles-tela {
+        display: none !important; /* Esconde os botões no papel */
+      }
+      .bloco-dados {
+        background: transparent;
+      }
+    }

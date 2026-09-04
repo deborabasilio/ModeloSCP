@@ -10,14 +10,12 @@
     <header class="page-header"><h1>Categorias</h1><p>Organize os grupos do seu catálogo.</p></header>
     <div class="container">
 
-      <h3>Cadastro de Categoria de Produto</h3>
-
       <form id="categoriaProdutos">
-        <label for="codigoCategoria">Código da Categoria</label><!--gera automaticamente mostrando o que vai receber de id no banco-->
+        <label for="codigoCategoria">Código da Categoria:</label><!--gera automaticamente mostrando o que vai receber de id no banco-->
         <input type="text" id="codigoCategoria" readonly required>
 
         <label for="descricaoCategoria">Descrição da Categoria:</label>
-        <input type="text" id="descricaoCategoria" placeholder="Descreva a Categoria" required>
+        <input type="text" id="descricaoCategoria" required>
 
         <button type="submit" id="botao">Salvar</button>
         <button type="button" id="botaoVoltarForm" onclick="window.location.href='menu.html'">Voltar</button>

@@ -2,9 +2,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // ==========================================
   // 0. VERIFICA SE O USUÁRIO ESTÁ LOGADO E QUAL É O TIPO DE ACESSO
   // ==========================================
-  // O login.js guarda esses dados no navegador (sessionStorage) quando
-  // o usuário entra com sucesso. Se não tiver nada aqui, mandamos a
-  // pessoa de volta para a tela de login.
   const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
 
   if (!usuarioLogadoTexto) {
@@ -16,12 +13,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const tipoUsuarioLogado = String(usuarioLogado.tipo_usuario || "")
     .trim()
     .toUpperCase();
-  // Só escondemos Editar/Excluir quando o acesso for explicitamente PADRAO.
-  // Qualquer outro valor (ADMIN, ou algo inesperado) mantém os botões visíveis.
   const ehAdmin = tipoUsuarioLogado !== "PADRAO";
-  // O ADMIN sempre pode tudo. O usuário PADRAO depende das novas colunas:
   const usuarioPodeEditar = ehAdmin || usuarioLogado.pode_editar === true;
   const usuarioPodeExcluir = ehAdmin || usuarioLogado.pode_excluir === true;
+
   // ==========================================
   // 1. ABRIR E FECHAR OS SUBMENUS (DROPDOWNS)
   // ==========================================
@@ -45,7 +40,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Fecha ao clicar fora
   document.addEventListener("click", function (event) {
     if (!event.target.matches(".dropbtn")) {
       document.querySelectorAll(".dropdown-content").forEach((menu) => {
@@ -68,14 +62,11 @@ document.addEventListener("DOMContentLoaded", function () {
   let tabelaAtual = "";
   let queryAtual = "*";
 
-  // Nome da coluna que é a chave (ID) de cada tabela, usada para
-  // Editar e Excluir. E o nome da página de cadastro de cada uma,
-  // usada para abrir a tela de edição.
   const CHAVE_DA_TABELA = {
     clientes: "clienteid",
     categoria_produto: "categoriaprodutoid",
     produtos: "produtoid",
-    orcamentos: "orcamentoid", // CORRIGIDO: era "orcamentoitemid" (coluna que não existe nessa tabela)
+    orcamentos: "orcamentoid",
   };
 
   const PAGINA_DA_TABELA = {
@@ -88,7 +79,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const areaPainelEl = document.getElementById("area-painel");
   const areaPesquisaEl = document.getElementById("area-pesquisa");
 
-  // Troca qual das duas áreas (Painel ou Pesquisa) fica visível
   function mostrarArea(nomeArea) {
     areaPainelEl.style.display = nomeArea === "painel" ? "block" : "none";
     areaPesquisaEl.style.display = nomeArea === "pesquisa" ? "block" : "none";
@@ -122,32 +112,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let requisicao = window.supabaseClient.from(nomeTabela).select(query);
 
-    // SE HOUVER UM FILTRO APLICADO PELO USUÁRIO
     if (filtro && filtro.valor) {
       let nomeColunaReal = filtro.coluna.split(":")[1] || filtro.coluna;
 
-      // CONVERSÃO DE JOIN: Transforma "clientes(nome_cliente)" em "clientes.nome_cliente"
       if (nomeColunaReal.includes("(") && nomeColunaReal.includes(")")) {
         nomeColunaReal = nomeColunaReal.replace(/\(/g, ".").replace(/\)/g, "");
       }
 
-      // Identifica o tipo de dado baseado no nome da coluna real ou de relacionamento
       const ehNumero =
         nomeColunaReal.includes("id") || nomeColunaReal.includes("vl_");
       const ehData = nomeColunaReal.includes("dt_");
 
       if (ehNumero) {
-        // IDs e valores numéricos exigem busca exata para evitar conflito de tipos no Postgres
         requisicao = requisicao.eq(nomeColunaReal, filtro.valor);
       } else if (ehData) {
-        // Para datas, permite busca por aproximação textual (ex: ano, mês ou dia específico)
         if (filtro.condicao === "contem") {
           requisicao = requisicao.ilike(nomeColunaReal, `%${filtro.valor}%`);
         } else {
           requisicao = requisicao.eq(nomeColunaReal, filtro.valor);
         }
       } else {
-        // Textos normais e colunas de tabelas Relacionadas (joins)
         if (filtro.condicao === "contem") {
           requisicao = requisicao.ilike(nomeColunaReal, `%${filtro.valor}%`);
         } else if (filtro.condicao === "igual") {
@@ -172,17 +156,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const colunas = Object.keys(data[0]);
 
-    // PREENCHE O DROPDOWN DE COLUNAS AUTOMATICAMENTE SE FOR A PRIMEIRA BUSCA (SEM FILTRO)
     if (selectColuna && !filtro) {
       selectColuna.innerHTML =
         '<option value="">Selecione a coluna...</option>';
       colunas.forEach((coluna) => {
         const nomeFormatado = coluna.replace(/_/g, " ").toUpperCase();
-
         let queryArray = query.split(",").map((item) => item.trim());
         let colunaOriginal =
           queryArray.find((q) => q.startsWith(coluna + ":")) || coluna;
-
         selectColuna.innerHTML += `<option value="${colunaOriginal}">${nomeFormatado}</option>`;
       });
     }
@@ -197,26 +178,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let bodyHTML = "";
     data.forEach((linha) => {
-      // A primeira coluna de todas as nossas pesquisas é sempre o "Código"
-      // (o ID de verdade da tabela), então usamos ela para Editar/Excluir.
       const idRegistro = linha[colunas[0]];
 
       bodyHTML += `<tr data-id="${idRegistro}">`;
       colunas.forEach((coluna) => {
         let valor = linha[coluna];
 
-        // REGRA DO JOIN (Extrai o valor de objetos aninhados)
         if (typeof valor === "object" && valor !== null) {
           valor = Object.values(valor)[0];
         }
 
-        // REGRA DE CLIENTE
         if (coluna === "Tipo_de_Cliente") {
           if (valor === "F" || valor === "f") valor = "Físico";
           if (valor === "J" || valor === "j") valor = "Jurídico";
         }
 
-        // REGRA DE STATUS (produtos: ATIVO/INATIVO; orçamentos: FINALIZADO/PENDENTE/REPROVADO)
         if (coluna === "Status") {
           const statusTexto = String(valor).toUpperCase();
           if (statusTexto === "ATIVO" || statusTexto === "FINALIZADO") {
@@ -228,24 +204,45 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         }
 
+        if (coluna.toLowerCase().includes("data") && valor) {
+          const dataObj = new Date(valor);
+          if (!isNaN(dataObj.getTime())) {
+            // Se o alias indicar "orçamento" (tem hora), mostra data + hora.
+            // Os demais (validade, cadastro) mostram só a data.
+            valor =
+              coluna === "Data_do_Orçamento"
+                ? dataObj.toLocaleString("pt-BR")
+                : dataObj.toLocaleDateString("pt-BR");
+          }
+        }
+
+        if (
+          coluna.toLowerCase().includes("valor") &&
+          valor !== null &&
+          valor !== undefined &&
+          valor !== "" &&
+          !isNaN(Number(valor))
+        ) {
+          valor =
+            "R$ " +
+            Number(valor).toLocaleString("pt-BR", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            });
+        }
+
         bodyHTML += `<td>${valor || ""}</td>`;
       });
 
-      // Monta os botões de ação de acordo com o tipo de acesso do usuário.
-      // Acesso PADRAO só pode ver e cadastrar, não pode editar nem excluir.
       let botoesAcao = "";
 
       if (usuarioPodeEditar) {
         if (PAGINA_DA_TABELA[nomeTabela]) {
-          // CORRIGIDO: comparava com "orcamento_item", que nunca é o valor de nomeTabela
-          // aqui (a listagem de orçamentos sempre usa "orcamentos").
-          const textoBotao = nomeTabela === "orcamentos" ? "Visualizar" : "Editar";
+          const textoBotao =
+            nomeTabela === "orcamentos" ? "Visualizar" : "Editar";
           botoesAcao += `<button type="button" class="btn-editar">${textoBotao}</button>`;
         }
 
-        // CORRIGIDO: mesma troca de "orcamento_item" para "orcamentos", para os
-        // botões Aprovar/Reprovar aparecerem direto na listagem quando o status
-        // do orçamento for PENDENTE.
         if (nomeTabela === "orcamentos" && linha.Status === "PENDENTE") {
           botoesAcao += `<button type="button" class="btn-aprovar">Aprovar</button>`;
           botoesAcao += `<button type="button" class="btn-reprovar">Reprovar</button>`;
@@ -256,13 +253,18 @@ document.addEventListener("DOMContentLoaded", function () {
         botoesAcao += `<button type="button" class="btn-excluir">Excluir</button>`;
       }
 
+      // Altere esta linha dentro de buscarDados no menu.js
+      if (nomeTabela === "orcamentos") {
+        botoesAcao += `<button type="button" class="btn-imprimir">Imprimir</button>`;
+      }
+
       bodyHTML += `<td style="white-space: nowrap;">${botoesAcao}</td></tr>`;
     });
     tbody.innerHTML = bodyHTML;
   }
 
   // ==========================================
-  // 3b. AÇÕES NA LISTAGEM: EDITAR/VISUALIZAR, EXCLUIR, APROVAR, REPROVAR
+  // 3b. AÇÕES NA LISTAGEM: EDITAR/VISUALIZAR, EXCLUIR, APROVAR, REPROVAR, IMPRIMIR
   // ==========================================
   document
     .getElementById("tabela-corpo")
@@ -273,7 +275,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const idRegistro = linhaClicada.dataset.id;
 
-      // EDITAR/VISUALIZAR: abre a página de cadastro correspondente já com o ID na URL
+      // IMPRIMIR ORÇAMENTO NA LISTAGEM
+      if (botaoClicado.classList.contains("btn-imprimir")) {
+        window.open(`imprimir_orcamento.html?id=${idRegistro}`, "_blank");
+        return;
+      }
+
       if (botaoClicado.classList.contains("btn-editar")) {
         const pagina = PAGINA_DA_TABELA[tabelaAtual];
         if (pagina) {
@@ -282,7 +289,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      // EXCLUIR: apaga o registro no Supabase depois de confirmar com o usuário
       if (botaoClicado.classList.contains("btn-excluir")) {
         const confirmou = confirm(
           "Tem certeza que deseja excluir este registro? Essa ação não pode ser desfeita.",
@@ -305,7 +311,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      // APROVAR / REPROVAR: atualiza o status do orçamento
       if (
         botaoClicado.classList.contains("btn-aprovar") ||
         botaoClicado.classList.contains("btn-reprovar")
@@ -313,6 +318,32 @@ document.addEventListener("DOMContentLoaded", function () {
         const novoStatus = botaoClicado.classList.contains("btn-aprovar")
           ? "FINALIZADO"
           : "REPROVADO";
+
+        if (novoStatus === "FINALIZADO") {
+          const { data: itens } = await window.supabaseClient
+            .from("orcamento_item")
+            .select("produtoid, qt_produto")
+            .eq("orcamentoid", idRegistro);
+
+          if (itens) {
+            for (let item of itens) {
+              const { data: produto } = await window.supabaseClient
+                .from("produtos")
+                .select("qt_estoque_produto")
+                .eq("produtoid", item.produtoid)
+                .single();
+
+              if (produto) {
+                let novoEstoque = produto.qt_estoque_produto - item.qt_produto;
+
+                await window.supabaseClient
+                  .from("produtos")
+                  .update({ qt_estoque_produto: novoEstoque })
+                  .eq("produtoid", item.produtoid);
+              }
+            }
+          }
+        }
 
         const { error } = await window.supabaseClient
           .from("orcamentos")
@@ -325,7 +356,6 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
 
-        // Atualiza a listagem para refletir o novo status
         buscarDados(
           tabelaAtual,
           document.getElementById("titulo-pesquisa").innerText,
@@ -340,7 +370,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // ==========================================
   document.getElementById("btn-filtrar")?.addEventListener("click", (e) => {
     e.preventDefault();
-
     const colunaSelecionada = document.getElementById("filtro-coluna").value;
     const condicaoSelecionada =
       document.getElementById("filtro-condicao").value;
@@ -397,9 +426,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // ==========================================
   // 6. PAINEL (DASHBOARD)
   // ==========================================
-  // CORRIGIDO: antes essa função tentava preencher tabelas (tabela-finalizados,
-  // tabela-pendentes, tabela-reprovados) que não existem no menu.html — só
-  // existem os <span> de contagem. Agora ela só atualiza os contadores.
   function atualizarContadorOrcamentos(spanQtdId, lista) {
     const spanQtd = document.getElementById(spanQtdId);
     if (spanQtd) spanQtd.textContent = lista.length;
@@ -412,7 +438,6 @@ document.addEventListener("DOMContentLoaded", function () {
       .querySelectorAll(".dropdown-content")
       .forEach((m) => m.classList.remove("mostrar-dropdown"));
 
-    // Orçamentos, separados por status (só a contagem, para os cards do painel)
     const { data: orcamentos, error: erroOrcamentos } =
       await window.supabaseClient
         .from("orcamentos")
@@ -436,8 +461,6 @@ document.addEventListener("DOMContentLoaded", function () {
     atualizarContadorOrcamentos("qtd-finalizados", finalizados);
     atualizarContadorOrcamentos("qtd-pendentes", pendentes);
     atualizarContadorOrcamentos("qtd-reprovados", reprovados);
-
-    // O bloco de estoque foi removido (tabela-estoque não existe mais no HTML).
   }
 
   document.getElementById("btn-painel")?.addEventListener("click", (e) => {
@@ -445,7 +468,6 @@ document.addEventListener("DOMContentLoaded", function () {
     carregarPainel();
   });
 
-  // O Painel é a tela inicial ao abrir o menu
   carregarPainel();
 
   // ==========================================
@@ -454,13 +476,60 @@ document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("btn-sair")
     ?.addEventListener("click", function (event) {
-      event.preventDefault(); // Impede o link de agir normalmente
-
-      // Remove os dados do usuário da memória do navegador
+      event.preventDefault();
       localStorage.removeItem("usuarioLogado");
-      sessionStorage.removeItem("usuarioLogado"); // Por garantia, caso mude de ideia depois
-
-      // Redireciona para a tela de login
+      sessionStorage.removeItem("usuarioLogado");
       window.location.href = "login.html";
     });
+
+  // ==========================================
+  // 8. CLIQUE NOS CARDS DO PAINEL (FILTRO AUTOMÁTICO)
+  // ==========================================
+  const cardsPainel = {
+    verde: "FINALIZADO",
+    amarelo: "PENDENTE",
+    vermelho: "REPROVADO",
+  };
+
+  Object.keys(cardsPainel).forEach((cor) => {
+    const card = document.querySelector(`.painel-card.${cor}`);
+    if (card) {
+      card.addEventListener("click", () => {
+        mostrarArea("pesquisa");
+        const query =
+          "Código:orcamentoid, Data_do_Orçamento:dt_orcamento, Cliente:clientes(nome_cliente), Valor_Total:vl_total_orcamento, Data_de_Validade:dt_validade_orcamento, Status:status_orcamento";
+
+        buscarDados("orcamentos", "Orçamentos " + cardsPainel[cor], query, {
+          coluna: "Status:status_orcamento",
+          condicao: "igual",
+          valor: cardsPainel[cor],
+        });
+
+        setTimeout(() => {
+          const selectColuna = document.getElementById("filtro-coluna");
+          if (selectColuna && selectColuna.options.length <= 1) {
+            selectColuna.innerHTML += `<option value="Status:status_orcamento">STATUS</option>`;
+          }
+          if (selectColuna) selectColuna.value = "Status:status_orcamento";
+          document.getElementById("filtro-condicao").value = "igual";
+          document.getElementById("filtro-valor").value = cardsPainel[cor];
+        }, 500);
+      });
+    }
+  });
+});
+
+// =====================================================
+// 9. FORÇAR LETRAS MAIÚSCULAS NOS CAMPOS DE TEXTO
+// =====================================================
+document.addEventListener("DOMContentLoaded", function () {
+  const camposTexto = document.querySelectorAll('input[type="text"], textarea');
+  camposTexto.forEach((campo) => {
+    campo.addEventListener("input", function () {
+      const inicioCursor = this.selectionStart;
+      const fimCursor = this.selectionEnd;
+      this.value = this.value.toUpperCase();
+      this.setSelectionRange(inicioCursor, fimCursor);
+    });
+  });
 });

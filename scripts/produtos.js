@@ -7,10 +7,7 @@
 const SUPABASE_URL = "https://whidvijhqmudgzyylbfo.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_MHgrDJpm8wa4mGTJWPR0sg_08Bc9dut";
 
-const supabaseClient = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /*
   =====================================================
@@ -49,7 +46,8 @@ if (!usuarioLogadoTexto) {
   window.location.href = "login.html"; // Expulsa se não estiver logado
 } else {
   const usuarioLogado = JSON.parse(usuarioLogadoTexto);
-  const ehAdmin = String(usuarioLogado.tipo_usuario).trim().toUpperCase() !== "PADRAO";
+  const ehAdmin =
+    String(usuarioLogado.tipo_usuario).trim().toUpperCase() !== "PADRAO";
   const usuarioPodeEditar = ehAdmin || usuarioLogado.pode_editar === true;
 
   const parametrosUrl = new URLSearchParams(window.location.search);
@@ -76,6 +74,50 @@ dataCadastroProdInput.value = formatarDataHoraAtual();
 
 /*
   =====================================================
+  FUNÇÕES PARA FORMATAR O VALOR DE VENDA EM REAL
+  =====================================================
+  formatarValorDigitado: usada enquanto o usuário digita.
+  Trata os números digitados como se os 2 últimos fossem
+  sempre os centavos (do jeito que funciona em caixa de
+  loja / maquininha de cartão).
+
+  converterValorParaNumero: usada na hora de salvar, para
+  transformar o texto "1.234,56" de volta em um número
+  (1234.56) que o Supabase entende.
+*/
+function formatarValorDigitado(valorDigitado) {
+  // Remove tudo que não for número
+  let numeros = valorDigitado.replace(/\D/g, "");
+
+  if (numeros === "") {
+    return "";
+  }
+
+  // Transforma em número e divide por 100 para separar os centavos
+  const valorEmReais = Number(numeros) / 100;
+
+  // Formata no padrão brasileiro: 1.234,56
+  return valorEmReais.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function converterValorParaNumero(valorFormatado) {
+  if (!valorFormatado) return 0;
+
+  // Remove os pontos de milhar e troca a vírgula decimal por ponto
+  const valorLimpo = valorFormatado.replace(/\./g, "").replace(",", ".");
+  return Number(valorLimpo) || 0;
+}
+
+// Toda vez que o usuário digitar algo no campo, a máscara é reaplicada
+valorVendaInput.addEventListener("input", function () {
+  valorVendaInput.value = formatarValorDigitado(valorVendaInput.value);
+});
+
+/*
+  =====================================================
   MOSTRAR O PRÓXIMO CÓDIGO (só um preview)
   =====================================================
 */
@@ -96,9 +138,9 @@ async function mostrarProximoCodigo() {
 let mapaCategorias = {};
 
 /*
-  =====================================================
-  BUSCAR AS CATEGORIAS E COLOCAR NA SELECT
-  =====================================================
+  =====================
+  BUSCAR AS CATEGORIAS
+  =====================
 */
 async function carregarCategorias() {
   const { data, error } = await supabaseClient
@@ -111,19 +153,19 @@ async function carregarCategorias() {
     return;
   }
 
-  catProdSelect.length = 1;
+  const listaCategoriasEl = document.getElementById("listaCategorias");
+  listaCategoriasEl.innerHTML = "";
   mapaCategorias = {};
 
   data.forEach((categoria) => {
-    const opcao = document.createElement("option");
-    opcao.value = categoria.categoriaprodutoid;
-    opcao.textContent = categoria.ds_categoria_produto;
-    catProdSelect.appendChild(opcao);
+    mapaCategorias[categoria.categoriaprodutoid] =
+      categoria.ds_categoria_produto;
 
-    mapaCategorias[categoria.categoriaprodutoid] = categoria.ds_categoria_produto;
+    const opcao = document.createElement("option");
+    opcao.value = `${categoria.ds_categoria_produto} (Código: ${categoria.categoriaprodutoid})`;
+    listaCategoriasEl.appendChild(opcao);
   });
 }
-
 
 /*
   =====================================================
@@ -145,16 +187,25 @@ async function carregarProdutoNoFormulario(idProduto) {
   }
 
   idProdInput.value = produto.produtoid;
-  catProdSelect.value = produto.categoriaprodutoid;
+  const nomeCategoria = mapaCategorias[produto.categoriaprodutoid];
+  catProdSelect.value = nomeCategoria
+    ? `${nomeCategoria} (Código: ${produto.categoriaprodutoid})`
+    : "";
   descProdInput.value = produto.ds_produto;
   obsProdInput.value = produto.obs_produto ?? "";
-  valorVendaInput.value = produto.vl_venda_produto;
+  valorVendaInput.value = Number(produto.vl_venda_produto).toLocaleString(
+    "pt-BR",
+    {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    },
+  );
   qtdEstoqueProdInput.value = produto.qt_estoque_produto ?? 0;
 
   // Se a data vier no formato ISO do banco (timestamp), convertemos para visualização
   let dataVisual = produto.dt_cadastro_produto;
   if (dataVisual && dataVisual.includes("T")) {
-     dataVisual = new Date(dataVisual).toLocaleString("pt-BR");
+    dataVisual = new Date(dataVisual).toLocaleString("pt-BR");
   }
   dataCadastroProdInput.value = dataVisual ?? formatarDataHoraAtual();
   statusProdSelect.value = produto.status_produto;
@@ -164,7 +215,6 @@ async function carregarProdutoNoFormulario(idProduto) {
 
   formProdutos.scrollIntoView({ behavior: "smooth" });
 }
-
 
 /*
   =====================================================
@@ -187,7 +237,14 @@ function voltarParaModoCadastro() {
 formProdutos.addEventListener("submit", async function (evento) {
   evento.preventDefault();
 
-  const categoria = catProdSelect.value;
+  const categoria = extrairCodigoDoTexto(catProdSelect.value);
+
+  if (!categoria) {
+    mensagem.textContent =
+      "Selecione uma categoria válida na lista antes de salvar.";
+    mensagem.className = "erro";
+    return;
+  }
   const descricao = descProdInput.value.trim();
   const observacao = obsProdInput.value.trim();
   const valorVenda = valorVendaInput.value;
@@ -222,9 +279,9 @@ formProdutos.addEventListener("submit", async function (evento) {
     categoriaprodutoid: categoria,
     ds_produto: descricao,
     obs_produto: observacao,
-    vl_venda_produto: valorVenda,
+    vl_venda_produto: converterValorParaNumero(valorVenda),
     qt_estoque_produto: qtdEstoque,
-    status_produto: status
+    status_produto: status,
   };
 
   let erroSupabase = null;
@@ -238,7 +295,7 @@ formProdutos.addEventListener("submit", async function (evento) {
     erroSupabase = error;
   } else {
     // Passando no formato ISO para compatibilidade direta com timestamp
-    dadosProduto.dt_cadastro_produto = new Date().toISOString(); 
+    dadosProduto.dt_cadastro_produto = new Date().toISOString();
 
     const { error } = await supabaseClient
       .from(TABELA_PRODUTOS)
@@ -295,3 +352,26 @@ async function iniciarPagina() {
 }
 
 iniciarPagina();
+/*
+  =====================================================
+  FORÇAR LETRAS MAIÚSCULAS NOS CAMPOS DE TEXTO
+  =====================================================
+*/
+document.addEventListener("DOMContentLoaded", function () {
+  // Seleciona todos os inputs de texto e textareas da página atual
+  const camposTexto = document.querySelectorAll('input[type="text"], textarea');
+
+  camposTexto.forEach((campo) => {
+    campo.addEventListener("input", function () {
+      // Guarda a posição atual do cursor para não pular pro final ao digitar no meio do texto
+      const inicioCursor = this.selectionStart;
+      const fimCursor = this.selectionEnd;
+
+      // Converte o valor para maiúsculas
+      this.value = this.value.toUpperCase();
+
+      // Restaura a posição do cursor
+      this.setSelectionRange(inicioCursor, fimCursor);
+    });
+  });
+});

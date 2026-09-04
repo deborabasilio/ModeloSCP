@@ -14,10 +14,8 @@
             <input type="text" id="idProd" readonly>
 
             <label for="catProd">Categoria do Produto:</label>
-            <select id="catProd" required>
-                <option value="" disabled selected>Selecione</option>
-                <!--as opções aqui embaixo são preenchidas pelo produtos.js, buscando as categorias do banco-->
-            </select>
+            <input type="text" id="catProd" list="listaCategorias" placeholder="Digite para buscar a categoria..." autocomplete="new-off-clientes" required>
+            <datalist id="listaCategorias"></datalist>
 
             <label for="descProd">Descrição do Produto:</label>
             <input type="text" id="descProd" required>
@@ -26,7 +24,7 @@
             <textarea id="obsProd" required></textarea>
 
             <label for="valorVenda">Valor de Venda:</label>
-            <input type="number" id="valorVenda" required>
+            <input type="text" id="valorVenda" inputmode="decimal" placeholder="R$ 0,00" required>
 
             <label for="qtdEstoqueProd">Quantidade em Estoque:</label>
             <input type="number" id="qtdEstoqueProd" min="0" value="0" required>
