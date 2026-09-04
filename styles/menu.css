@@ -141,19 +141,27 @@
 }
 
 /* Dá um respiro e centraliza o conteúdo abaixo do menu */
+/* CORRIGIDO: aumentado de 1040px para 1300px, para dar mais espaço
+   à barra de filtro e à tabela (evita quebra de linha no "Filtrar por"). */
 .conteudo-pagina {
-  max-width: 1040px;
+  max-width: 1300px;
   margin: 40px auto;
   padding: 0 20px;
   font-family: "Segoe UI", Arial, sans-serif;
   color: var(--text);
 }
 
-/* Alinha o título e a barra de busca lado a lado */
+/*
+  CORRIGIDO: título e barra de filtro agora ficam em linhas separadas
+  (um embaixo do outro), em vez de dividir a mesma linha com
+  "justify-content: space-between". Assim a barra de filtro tem a
+  largura inteira disponível para não precisar quebrar.
+*/
 .cabecalho-pesquisa {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
   margin-bottom: 20px;
 }
 
@@ -162,8 +170,61 @@
   margin: 0;
 }
 
+/*
+  CORRIGIDO: flex-wrap: nowrap trava tudo numa linha só. Cada campo
+  ganha uma largura flexível (flex-basis) em vez de largura fixa,
+  então eles crescem/encolhem juntos, mas sem quebrar linha.
+*/
+.barra-filtro {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  background-color: #f8fafc;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.barra-filtro label {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--navy);
+}
+
+.barra-filtro select,
+.barra-filtro input {
+  min-width: 0; /* permite o campo encolher dentro do flex, sem forçar quebra */
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+
+.barra-filtro #filtro-coluna {
+  flex: 1 1 220px;
+}
+
+.barra-filtro #filtro-condicao {
+  flex: 0 1 130px;
+}
+
+.barra-filtro #filtro-valor {
+  flex: 1 1 160px;
+}
+
+.barra-filtro select:focus,
+.barra-filtro input:focus {
+  border-color: var(--blue);
+}
 
 .btn-buscar {
+  flex: 0 0 auto;
+  white-space: nowrap;
   background-color: var(--blue);
   color: white;
   border: none;
@@ -177,6 +238,19 @@
 
 .btn-buscar:hover {
   background-color: #1d4ed8;
+}
+
+/* Em telas bem estreitas, permite quebrar de novo (senão fica ilegível) */
+@media (max-width: 700px) {
+  .barra-filtro {
+    flex-wrap: wrap;
+  }
+
+  .barra-filtro #filtro-coluna,
+  .barra-filtro #filtro-condicao,
+  .barra-filtro #filtro-valor {
+    flex: 1 1 100%;
+  }
 }
 
 /* Estilo da Tabela de Clientes */
@@ -209,21 +283,6 @@
   background-color: #f8fafc;
 }
 
-/* Botão de editar dentro da tabela */
-.btn-editar {
-  background-color: #f59e0b;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: inherit;
-  font-weight: 700;
-}
-
-.btn-editar:hover {
-  background-color: #d97706;
-}
 /* Botão de editar dentro da tabela */
 .btn-editar {
   background-color: #f59e0b;
@@ -290,39 +349,6 @@
 
 .btn-reprovar:hover {
   background-color: #4b5563;
-}
-/* =========================================
-   NOVA BARRA DE FILTROS DINÂMICA
-   ========================================= */
-.barra-filtro {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background-color: #f8fafc;
-  padding: 12px 20px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-}
-
-.barra-filtro label {
-  font-size: 14px;
-  font-weight: bold;
-  color: var(--navy);
-}
-
-.barra-filtro select,
-.barra-filtro input {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-  outline: none;
-}
-
-.barra-filtro select:focus,
-.barra-filtro input:focus {
-  border-color: var(--blue);
 }
 
 /* =========================================

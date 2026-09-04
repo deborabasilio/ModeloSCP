@@ -29,9 +29,18 @@
 
           <p class="total-visualizacao-orcamento"><strong>Valor Total do Orçamento:</strong> R$ <span id="visTotal"></span></p>
 
-          <div id="visAcoes" class="acoes-visualizacao-orcamento">
-            <button type="button" id="btnAprovarOrcamento" class="botao-secundario">Aprovar Orçamento</button>
-            <button type="button" id="btnReprovarOrcamento" class="botao-secundario">Reprovar Orçamento</button>
+          <!--
+            CORRIGIDO: o botão "Voltar" ficava dentro da mesma div que Aprovar/Reprovar,
+            que só era exibida quando o orçamento estava PENDENTE. Isso fazia o Voltar
+            sumir junto quando o orçamento já estava Finalizado ou Reprovado.
+            Agora "visAcoesAprovacao" controla só Aprovar/Reprovar (via status), e o
+            Voltar fica fora dela, sempre visível.
+          -->
+          <div class="acoes-visualizacao-orcamento">
+            <div id="visAcoesAprovacao">
+              <button type="button" id="btnAprovarOrcamento" class="botao-secundario">Aprovar Orçamento</button>
+              <button type="button" id="btnReprovarOrcamento" class="botao-secundario">Reprovar Orçamento</button>
+            </div>
             <button type="button" id="botaoVoltarVis" onclick="window.location.href='menu.html'">Voltar</button>
           </div>
         </div>
@@ -60,7 +69,7 @@
         <label for="produtoOrc">Produto:</label>
         <select id="produtoOrc">
           <option value="" selected>Selecione um produto</option>
-          <!--as opções aqui embaixo são preenchidas pelo orcamentos.js, buscando os produtos do banco-->
+          <!--as opções aqui embaixo são preenchidas pelo orcamentos.js, buscando os produtos ATIVOS do banco-->
         </select>
 
         <label for="descProdutoOrc">Descrição:</label>

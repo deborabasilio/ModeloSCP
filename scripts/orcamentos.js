@@ -53,7 +53,10 @@ const visValidade = document.getElementById("visValidade");
 const visStatus = document.getElementById("visStatus");
 const visCorpoItens = document.getElementById("visCorpoItens");
 const visTotal = document.getElementById("visTotal");
-const visAcoes = document.getElementById("visAcoes");
+// CORRIGIDO: antes existia só "visAcoes" (Aprovar + Reprovar + Voltar juntos).
+// Agora "visAcoesAprovacao" controla só Aprovar/Reprovar, que dependem do status.
+// O botão Voltar (no HTML) ficou fora dessa div e não depende de mais nada.
+const visAcoesAprovacao = document.getElementById("visAcoesAprovacao");
 const btnAprovarOrcamento = document.getElementById("btnAprovarOrcamento");
 const btnReprovarOrcamento = document.getElementById("btnReprovarOrcamento");
 
@@ -149,11 +152,14 @@ async function carregarClientes() {
   =====================================================
   BUSCAR PRODUTOS E COLOCAR NA SELECT
   =====================================================
+  CORRIGIDO: agora só busca produtos com status_produto = "ATIVO".
+  Produtos inativos não devem poder ser selecionados em um orçamento novo.
 */
 async function carregarProdutos() {
   const { data, error } = await supabaseClient
     .from(TABELA_PRODUTOS)
     .select("produtoid, ds_produto, vl_venda_produto")
+    .eq("status_produto", "ATIVO")
     .order("ds_produto", { ascending: true });
 
   if (error) {
@@ -453,11 +459,12 @@ async function carregarOrcamentoParaVisualizacao(idOrcamento) {
         </tr>
       `).join("");
 
-  // Só mostra os botões de Aprovar/Reprovar quando o orçamento ainda está pendente
+  // CORRIGIDO: só o bloco de Aprovar/Reprovar depende do status ser PENDENTE.
+  // O botão Voltar (fora dessa div, no HTML) fica sempre visível.
   if (orcamento.status_orcamento === "PENDENTE") {
-    visAcoes.classList.remove("oculto");
+    visAcoesAprovacao.classList.remove("oculto");
   } else {
-    visAcoes.classList.add("oculto");
+    visAcoesAprovacao.classList.add("oculto");
   }
 }
 
@@ -480,7 +487,7 @@ async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
   mensagem.className = "sucesso";
 
   visStatus.textContent = novoStatus;
-  visAcoes.classList.add("oculto");
+  visAcoesAprovacao.classList.add("oculto");
 }
 
 btnAprovarOrcamento?.addEventListener("click", () => {

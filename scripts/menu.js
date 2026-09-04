@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
     clientes: "clienteid",
     categoria_produto: "categoriaprodutoid",
     produtos: "produtoid",
-    orcamentos: "orcamentoitemid",
+    orcamentos: "orcamentoid", // CORRIGIDO: era "orcamentoitemid" (coluna que não existe nessa tabela)
   };
 
   const PAGINA_DA_TABELA = {
@@ -237,11 +237,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (usuarioPodeEditar) {
         if (PAGINA_DA_TABELA[nomeTabela]) {
-          const textoBotao = nomeTabela === "orcamento_item" ? "Visualizar" : "Editar";
+          // CORRIGIDO: comparava com "orcamento_item", que nunca é o valor de nomeTabela
+          // aqui (a listagem de orçamentos sempre usa "orcamentos").
+          const textoBotao = nomeTabela === "orcamentos" ? "Visualizar" : "Editar";
           botoesAcao += `<button type="button" class="btn-editar">${textoBotao}</button>`;
         }
-        
-        if (nomeTabela === "orcamento_item" && linha.Status === "PENDENTE") {
+
+        // CORRIGIDO: mesma troca de "orcamento_item" para "orcamentos", para os
+        // botões Aprovar/Reprovar aparecerem direto na listagem quando o status
+        // do orçamento for PENDENTE.
+        if (nomeTabela === "orcamentos" && linha.Status === "PENDENTE") {
           botoesAcao += `<button type="button" class="btn-aprovar">Aprovar</button>`;
           botoesAcao += `<button type="button" class="btn-reprovar">Reprovar</button>`;
         }
@@ -392,28 +397,12 @@ document.addEventListener("DOMContentLoaded", function () {
   // ==========================================
   // 6. PAINEL (DASHBOARD)
   // ==========================================
-  function preencherTabelaOrcamentos(corpoId, spanQtdId, lista) {
-    const corpo = document.getElementById(corpoId);
+  // CORRIGIDO: antes essa função tentava preencher tabelas (tabela-finalizados,
+  // tabela-pendentes, tabela-reprovados) que não existem no menu.html — só
+  // existem os <span> de contagem. Agora ela só atualiza os contadores.
+  function atualizarContadorOrcamentos(spanQtdId, lista) {
     const spanQtd = document.getElementById(spanQtdId);
-
-    spanQtd.textContent = lista.length;
-
-    if (lista.length === 0) {
-      corpo.innerHTML = '<tr><td colspan="3">Nenhum</td></tr>';
-      return;
-    }
-
-    corpo.innerHTML = lista
-      .map(
-        (orc) => `
-      <tr>
-        <td>${orc.orcamentoid}</td>
-        <td>${orc.clientes?.nome_cliente ?? ""}</td>
-        <td>R$ ${Number(orc.vl_total_orcamento).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-      </tr>
-    `,
-      )
-      .join("");
+    if (spanQtd) spanQtd.textContent = lista.length;
   }
 
   async function carregarPainel() {
@@ -423,68 +412,32 @@ document.addEventListener("DOMContentLoaded", function () {
       .querySelectorAll(".dropdown-content")
       .forEach((m) => m.classList.remove("mostrar-dropdown"));
 
-    // Orçamentos, separados por status
+    // Orçamentos, separados por status (só a contagem, para os cards do painel)
     const { data: orcamentos, error: erroOrcamentos } =
       await window.supabaseClient
         .from("orcamentos")
-        .select(
-          "orcamentoid, vl_total_orcamento, status_orcamento, clientes(nome_cliente)",
-        );
+        .select("orcamentoid, status_orcamento");
 
     if (erroOrcamentos) {
       console.error(erroOrcamentos);
-    } else {
-      const finalizados = orcamentos.filter(
-        (o) => o.status_orcamento === "FINALIZADO",
-      );
-      const pendentes = orcamentos.filter(
-        (o) => o.status_orcamento === "PENDENTE",
-      );
-      const reprovados = orcamentos.filter(
-        (o) => o.status_orcamento === "REPROVADO",
-      );
-
-      preencherTabelaOrcamentos(
-        "tabela-finalizados",
-        "qtd-finalizados",
-        finalizados,
-      );
-      preencherTabelaOrcamentos("tabela-pendentes", "qtd-pendentes", pendentes);
-      preencherTabelaOrcamentos(
-        "tabela-reprovados",
-        "qtd-reprovados",
-        reprovados,
-      );
+      return;
     }
 
-    // Estoque: produtos ativos e sua quantidade
-    const { data: produtos, error: erroProdutos } = await window.supabaseClient
-      .from("produtos")
-      .select("ds_produto, qt_estoque_produto, status_produto")
-      .eq("status_produto", "ATIVO")
-      .order("ds_produto", { ascending: true });
+    const finalizados = orcamentos.filter(
+      (o) => o.status_orcamento === "FINALIZADO",
+    );
+    const pendentes = orcamentos.filter(
+      (o) => o.status_orcamento === "PENDENTE",
+    );
+    const reprovados = orcamentos.filter(
+      (o) => o.status_orcamento === "REPROVADO",
+    );
 
-    const corpoEstoque = document.getElementById("tabela-estoque");
+    atualizarContadorOrcamentos("qtd-finalizados", finalizados);
+    atualizarContadorOrcamentos("qtd-pendentes", pendentes);
+    atualizarContadorOrcamentos("qtd-reprovados", reprovados);
 
-    if (erroProdutos) {
-      console.error(erroProdutos);
-      corpoEstoque.innerHTML =
-        '<tr><td colspan="2">Erro ao buscar estoque.</td></tr>';
-    } else if (!produtos || produtos.length === 0) {
-      corpoEstoque.innerHTML =
-        '<tr><td colspan="2">Nenhum produto ativo.</td></tr>';
-    } else {
-      corpoEstoque.innerHTML = produtos
-        .map(
-          (p) => `
-        <tr>
-          <td>${p.ds_produto}</td>
-          <td>${p.qt_estoque_produto ?? 0}</td>
-        </tr>
-      `,
-        )
-        .join("");
-    }
+    // O bloco de estoque foi removido (tabela-estoque não existe mais no HTML).
   }
 
   document.getElementById("btn-painel")?.addEventListener("click", (e) => {
