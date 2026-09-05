@@ -46,6 +46,12 @@ document.addEventListener("DOMContentLoaded", function () {
         menu.classList.remove("mostrar-dropdown");
       });
     }
+
+    if (!event.target.matches(".btn-menu-acoes")) {
+      document.querySelectorAll(".menu-acoes-dropdown").forEach((menu) => {
+        menu.classList.remove("mostrar-menu-acoes");
+      });
+    }
   });
 
   // ==========================================
@@ -119,23 +125,63 @@ document.addEventListener("DOMContentLoaded", function () {
         nomeColunaReal = nomeColunaReal.replace(/\(/g, ".").replace(/\)/g, "");
       }
 
-      const ehNumero =
-        nomeColunaReal.includes("id") || nomeColunaReal.includes("vl_");
-      const ehData = nomeColunaReal.includes("dt_");
+      // Pega só o nome real da coluna (sem o prefixo "tabela." de colunas
+      // vindas de relacionamentos, tipo "clientes.nome_cliente"), para
+      // decidir o TIPO do dado que estamos filtrando.
+      const nomeColunaSimples = nomeColunaReal.split(".").pop();
 
-      if (ehNumero) {
-        requisicao = requisicao.eq(nomeColunaReal, filtro.valor);
-      } else if (ehData) {
-        if (filtro.condicao === "contem") {
-          requisicao = requisicao.ilike(nomeColunaReal, `%${filtro.valor}%`);
-        } else {
-          requisicao = requisicao.eq(nomeColunaReal, filtro.valor);
+      // IMPORTANTE: antes essa checagem usava "includes('id')", o que
+      // detectava errado colunas como "dt_validade_orcamento" (a palavra
+      // "valID Ade" contém "id" no meio) e tratava datas como se fossem
+      // código numérico. Agora só considera código quando o nome da
+      // coluna termina em "id" de verdade (produtoid, clienteid, etc.).
+      const ehCodigo = /id$/i.test(nomeColunaSimples);
+      const ehValorMonetario = nomeColunaSimples.startsWith("vl_");
+      const ehData = nomeColunaSimples.startsWith("dt_");
+
+      const valorDigitado = String(filtro.valor).trim();
+
+      if (ehCodigo) {
+        // Código: sempre comparação exata, extraindo só os números
+        // digitados (o usuário pode digitar "5" ou "#5", por exemplo).
+        const numero = Number(valorDigitado.replace(/\D/g, ""));
+        if (!isNaN(numero)) {
+          requisicao = requisicao.eq(nomeColunaReal, numero);
         }
+      } else if (ehValorMonetario) {
+        // Valor monetário: o campo aparece formatado na tela como
+        // "1.234,56", mas no banco é um número puro (1234.56). Aceita o
+        // que o usuário digitar em qualquer um dos dois formatos.
+        const somenteNumero = valorDigitado.replace(/[^\d,.-]/g, "");
+        const numero = Number(
+          somenteNumero.includes(",")
+            ? somenteNumero.replace(/\./g, "").replace(",", ".")
+            : somenteNumero,
+        );
+        if (!isNaN(numero)) {
+          requisicao = requisicao.eq(nomeColunaReal, numero);
+        }
+      } else if (ehData) {
+        // Data: o campo aparece formatado na tela como "dd/mm/aaaa", mas
+        // no banco é um timestamp completo (aaaa-mm-ddTHH:MM:SS). Como o
+        // Postgres não permite "ilike" direto num timestamp, fazemos um
+        // cast para texto (":: text") e comparamos pelo início da data no
+        // formato do banco, aceitando o que o usuário digitar em
+        // dd/mm/aaaa ou já no formato aaaa-mm-dd.
+        const partesBr = valorDigitado.match(
+          /^(\d{2})\/(\d{2})\/(\d{4})$/,
+        );
+        const dataBusca = partesBr
+          ? `${partesBr[3]}-${partesBr[2]}-${partesBr[1]}`
+          : valorDigitado;
+
+        requisicao = requisicao.ilike(`${nomeColunaReal}::text`, `${dataBusca}%`);
       } else {
+        // Texto comum (nome, descrição, etc.)
         if (filtro.condicao === "contem") {
-          requisicao = requisicao.ilike(nomeColunaReal, `%${filtro.valor}%`);
-        } else if (filtro.condicao === "igual") {
-          requisicao = requisicao.ilike(nomeColunaReal, filtro.valor);
+          requisicao = requisicao.ilike(nomeColunaReal, `%${valorDigitado}%`);
+        } else {
+          requisicao = requisicao.ilike(nomeColunaReal, valorDigitado);
         }
       }
     }
@@ -195,7 +241,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (coluna === "Status") {
           const statusTexto = String(valor).toUpperCase();
-          if (statusTexto === "ATIVO" || statusTexto === "FINALIZADO") {
+          if (statusTexto === "ATIVO" || statusTexto === "APROVADO") {
             valor = `<span style="color: green; font-weight: bold;">${valor}</span>`;
           } else if (statusTexto === "INATIVO" || statusTexto === "REPROVADO") {
             valor = `<span style="color: red; font-weight: bold;">${valor}</span>`;
@@ -234,29 +280,40 @@ document.addEventListener("DOMContentLoaded", function () {
         bodyHTML += `<td>${valor || ""}</td>`;
       });
 
-      let botoesAcao = "";
+      // Monta os itens de ação (mesmas classes de sempre: btn-editar,
+      // btn-visualizar, btn-aprovar, btn-reprovar, btn-excluir). A lógica
+      // de clique de cada uma continua igual lá embaixo — só a aparência
+      // muda: em vez de um botão colorido solto por ação, elas agora
+      // ficam dentro de um menu suspenso, aberto por um único botão "⋮".
+      let itensAcao = "";
 
       if (usuarioPodeEditar) {
         if (PAGINA_DA_TABELA[nomeTabela]) {
-          const textoBotao =
-            nomeTabela === "orcamentos" ? "Visualizar" : "Editar";
-          botoesAcao += `<button type="button" class="btn-editar">${textoBotao}</button>`;
+          itensAcao +=
+            '<button type="button" class="btn-editar">Editar</button>';
+
+          if (nomeTabela === "orcamentos") {
+            itensAcao +=
+              '<button type="button" class="btn-visualizar">Visualizar</button>';
+          }
         }
 
         if (nomeTabela === "orcamentos" && linha.Status === "PENDENTE") {
-          botoesAcao += `<button type="button" class="btn-aprovar">Aprovar</button>`;
-          botoesAcao += `<button type="button" class="btn-reprovar">Reprovar</button>`;
+          itensAcao += `<button type="button" class="btn-aprovar">Aprovar</button>`;
+          itensAcao += `<button type="button" class="btn-reprovar">Reprovar</button>`;
         }
       }
 
       if (usuarioPodeExcluir) {
-        botoesAcao += `<button type="button" class="btn-excluir">Excluir</button>`;
+        itensAcao += `<button type="button" class="btn-excluir">Excluir</button>`;
       }
 
-      // Altere esta linha dentro de buscarDados no menu.js
-      if (nomeTabela === "orcamentos") {
-        botoesAcao += `<button type="button" class="btn-imprimir">Imprimir</button>`;
-      }
+      const botoesAcao = itensAcao
+        ? `<div class="menu-acoes">
+             <button type="button" class="btn-menu-acoes" title="Ações" aria-label="Abrir ações">⋮</button>
+             <div class="menu-acoes-dropdown">${itensAcao}</div>
+           </div>`
+        : "";
 
       bodyHTML += `<td style="white-space: nowrap;">${botoesAcao}</td></tr>`;
     });
@@ -264,27 +321,52 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ==========================================
-  // 3b. AÇÕES NA LISTAGEM: EDITAR/VISUALIZAR, EXCLUIR, APROVAR, REPROVAR, IMPRIMIR
+  // 3b. AÇÕES NA LISTAGEM: EDITAR, VISUALIZAR, EXCLUIR, APROVAR, REPROVAR, IMPRIMIR
   // ==========================================
   document
     .getElementById("tabela-corpo")
     ?.addEventListener("click", async function (evento) {
       const botaoClicado = evento.target;
+
+      // Abre/fecha o menu de ações (⋮) da linha clicada, fechando
+      // qualquer outro menu de ações que esteja aberto em outra linha.
+      if (botaoClicado.classList.contains("btn-menu-acoes")) {
+        const dropdownAtual = botaoClicado.nextElementSibling;
+
+        document.querySelectorAll(".menu-acoes-dropdown").forEach((menu) => {
+          if (menu !== dropdownAtual) {
+            menu.classList.remove("mostrar-menu-acoes");
+          }
+        });
+
+        dropdownAtual?.classList.toggle("mostrar-menu-acoes");
+        return;
+      }
+
       const linhaClicada = botaoClicado.closest("tr");
       if (!linhaClicada) return;
 
       const idRegistro = linhaClicada.dataset.id;
 
-      // IMPRIMIR ORÇAMENTO NA LISTAGEM
-      if (botaoClicado.classList.contains("btn-imprimir")) {
-        window.open(`imprimir_orcamento.html?id=${idRegistro}`, "_blank");
-        return;
-      }
+      // Qualquer ação escolhida dentro do menu já fecha o próprio menu.
+      botaoClicado
+        .closest(".menu-acoes-dropdown")
+        ?.classList.remove("mostrar-menu-acoes");
 
-      if (botaoClicado.classList.contains("btn-editar")) {
+      if (
+        botaoClicado.classList.contains("btn-editar") ||
+        botaoClicado.classList.contains("btn-visualizar")
+      ) {
         const pagina = PAGINA_DA_TABELA[tabelaAtual];
         if (pagina) {
-          window.open(`${pagina}?id=${idRegistro}`, "_blank");
+          // Em orçamentos, "Editar" e "Visualizar" apontam para a mesma
+          // página, mas precisam abrir modos diferentes: o parâmetro
+          // "modo=editar" avisa orcamentos.js para carregar o formulário
+          // editável em vez da tela somente-leitura.
+          const ehBotaoEditar = botaoClicado.classList.contains("btn-editar");
+          const sufixoModo =
+            tabelaAtual === "orcamentos" && ehBotaoEditar ? "&modo=editar" : "";
+          window.open(`${pagina}?id=${idRegistro}${sufixoModo}`, "_blank");
         }
         return;
       }
@@ -316,10 +398,10 @@ document.addEventListener("DOMContentLoaded", function () {
         botaoClicado.classList.contains("btn-reprovar")
       ) {
         const novoStatus = botaoClicado.classList.contains("btn-aprovar")
-          ? "FINALIZADO"
+          ? "APROVADO"
           : "REPROVADO";
 
-        if (novoStatus === "FINALIZADO") {
+        if (novoStatus === "APROVADO") {
           const { data: itens } = await window.supabaseClient
             .from("orcamento_item")
             .select("produtoid, qt_produto")
@@ -399,28 +481,28 @@ document.addEventListener("DOMContentLoaded", function () {
     e.preventDefault();
     const query =
       "Código:produtoid, Produto:ds_produto, Valor_Unitário:vl_venda_produto, Estoque:qt_estoque_produto, Observação:obs_produto, Categoria:categoria_produto(ds_categoria_produto), Status:status_produto, Data_de_Cadastro:dt_cadastro_produto";
-    buscarDados("produtos", "Pesquisa de Produtos", query);
+    buscarDados("produtos", "Lista de Produtos", query);
   });
 
   document.getElementById("pesq-orcamentos")?.addEventListener("click", (e) => {
     e.preventDefault();
     const query =
       "Código:orcamentoid, Data_do_Orçamento:dt_orcamento, Cliente:clientes(nome_cliente), Valor_Total:vl_total_orcamento, Data_de_Validade:dt_validade_orcamento, Status:status_orcamento";
-    buscarDados("orcamentos", "Pesquisa de Orçamentos", query);
+    buscarDados("orcamentos", "Lista de Orçamentos", query);
   });
 
   document.getElementById("pesq-clientes")?.addEventListener("click", (e) => {
     e.preventDefault();
     const query =
       "Código:clienteid, Tipo_de_Cliente:tipo_cliente, CPF_CNPJ:cpf_cnpj_cliente, Nome:nome_cliente";
-    buscarDados("clientes", "Pesquisa de Clientes", query);
+    buscarDados("clientes", "Lista de Clientes", query);
   });
 
   document.getElementById("pesq-categorias")?.addEventListener("click", (e) => {
     e.preventDefault();
     const query =
       "Código:categoriaprodutoid, Descrição_da_Categoria:ds_categoria_produto";
-    buscarDados("categoria_produto", "Pesquisa de Categorias", query);
+    buscarDados("categoria_produto", "Lista de Categorias", query);
   });
 
   // ==========================================
@@ -448,8 +530,8 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const finalizados = orcamentos.filter(
-      (o) => o.status_orcamento === "FINALIZADO",
+    const aprovados = orcamentos.filter(
+      (o) => o.status_orcamento === "APROVADO",
     );
     const pendentes = orcamentos.filter(
       (o) => o.status_orcamento === "PENDENTE",
@@ -458,7 +540,7 @@ document.addEventListener("DOMContentLoaded", function () {
       (o) => o.status_orcamento === "REPROVADO",
     );
 
-    atualizarContadorOrcamentos("qtd-finalizados", finalizados);
+    atualizarContadorOrcamentos("qtd-aprovados", aprovados);
     atualizarContadorOrcamentos("qtd-pendentes", pendentes);
     atualizarContadorOrcamentos("qtd-reprovados", reprovados);
   }
@@ -486,7 +568,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // 8. CLIQUE NOS CARDS DO PAINEL (FILTRO AUTOMÁTICO)
   // ==========================================
   const cardsPainel = {
-    verde: "FINALIZADO",
+    verde: "APROVADO",
     amarelo: "PENDENTE",
     vermelho: "REPROVADO",
   };

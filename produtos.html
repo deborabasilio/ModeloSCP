@@ -5,9 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Produtos</title>
     <link rel="stylesheet" href="styles/admin.css">
+    <script>
+      if (new URLSearchParams(window.location.search).has("id")) {
+        document.documentElement.classList.add("carregando-edicao");
+      }
+    </script>
 </head>
 <body>
-    <header class="page-header"><h1>Produtos</h1><p>Cadastre e mantenha o catálogo comercial.</p></header>
+    <header class="page-header"><h1 id="tituloPagina">Produtos</h1><p id="descricaoPagina">Cadastre e mantenha o catálogo comercial.</p></header>
     <div class="produtos">
         <form id="formProdutos">
             <label for="idProd">Código do Produto:</label><!--aqui deve mostar o codigo que vai gerar no banco desse produto-->
@@ -15,6 +20,7 @@
 
             <label for="catProd">Categoria do Produto:</label>
             <input type="text" id="catProd" list="listaCategorias" placeholder="Digite para buscar a categoria..." autocomplete="new-off-clientes" required>
+            <input type="hidden" id="catProdId">
             <datalist id="listaCategorias"></datalist>
 
             <label for="descProd">Descrição do Produto:</label>
@@ -39,7 +45,7 @@
                 <option value="INATIVO">Inativo</option>
             </select>
             <button type="submit" id="botao">Salvar</button>
-            <button type="button" id="botaoVoltarForm" onclick="window.location.href='menu.html'">Voltar</button>
+            <button type="button" id="botaoVoltarForm">Voltar</button>
         </form>
 
         <p id="mensagem"></p>

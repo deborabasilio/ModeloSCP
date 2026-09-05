@@ -26,6 +26,7 @@ const TABELA_CATEGORIAS = "categoria_produto";
 const formProdutos = document.getElementById("formProdutos");
 const idProdInput = document.getElementById("idProd");
 const catProdSelect = document.getElementById("catProd");
+const catProdIdInput = document.getElementById("catProdId");
 const descProdInput = document.getElementById("descProd");
 const obsProdInput = document.getElementById("obsProd");
 const valorVendaInput = document.getElementById("valorVenda");
@@ -34,6 +35,12 @@ const dataCadastroProdInput = document.getElementById("dataCadastroProd");
 const statusProdSelect = document.getElementById("statusProd");
 const mensagem = document.getElementById("mensagem");
 const botaoSalvar = document.getElementById("botao");
+
+// Extrai o código escondido no formato "Nome (Código: 5)" que o datalist usa internamente
+function extrairCodigoDoTexto(texto) {
+  const match = String(texto || "").match(/\(Código:\s*(\d+)\)\s*$/);
+  return match ? match[1] : null;
+}
 
 let idProdutoEmEdicao = null;
 
@@ -135,7 +142,7 @@ async function mostrarProximoCodigo() {
   idProdInput.value = (count ?? 0) + 1;
 }
 
-let mapaCategorias = {};
+let mapaCategorias = {}; // id -> nome (usado ao carregar um produto para edição)
 
 /*
   =====================
@@ -169,10 +176,34 @@ async function carregarCategorias() {
 
 /*
   =====================================================
+  QUANDO O USUÁRIO ESCOLHE UMA CATEGORIA NO DATALIST
+  =====================================================
+  Assim que o texto digitado bate com uma categoria da lista,
+  guardamos o código dela no campo escondido e limpamos o
+  "(Código: X)" do campo visível, para o usuário ver só o nome.
+*/
+catProdSelect.addEventListener("input", function () {
+  const codigo = extrairCodigoDoTexto(catProdSelect.value);
+
+  if (codigo) {
+    catProdSelect.value = catProdSelect.value.replace(
+      /\s*\(Código:\s*\d+\)\s*$/,
+      "",
+    );
+  }
+
+  catProdIdInput.value = codigo || "";
+});
+
+/*
+  =====================================================
   EDITAR: CARREGA OS DADOS DO PRODUTO NO FORMULÁRIO
   =====================================================
 */
 async function carregarProdutoNoFormulario(idProduto) {
+  mensagem.textContent = "Carregando dados do produto...";
+  mensagem.className = "";
+
   const { data: produto, error } = await supabaseClient
     .from(TABELA_PRODUTOS)
     .select("*")
@@ -183,14 +214,14 @@ async function carregarProdutoNoFormulario(idProduto) {
     mensagem.textContent = "Não foi possível carregar este produto.";
     mensagem.className = "erro";
     console.error(error);
+    document.documentElement.classList.remove("carregando-edicao");
     return;
   }
 
   idProdInput.value = produto.produtoid;
   const nomeCategoria = mapaCategorias[produto.categoriaprodutoid];
-  catProdSelect.value = nomeCategoria
-    ? `${nomeCategoria} (Código: ${produto.categoriaprodutoid})`
-    : "";
+  catProdSelect.value = nomeCategoria || "";
+  catProdIdInput.value = produto.categoriaprodutoid ?? "";
   descProdInput.value = produto.ds_produto;
   obsProdInput.value = produto.obs_produto ?? "";
   valorVendaInput.value = Number(produto.vl_venda_produto).toLocaleString(
@@ -212,6 +243,20 @@ async function carregarProdutoNoFormulario(idProduto) {
 
   idProdutoEmEdicao = produto.produtoid;
   botaoSalvar.textContent = "Atualizar Produto";
+
+  const tituloPagina = document.getElementById("tituloPagina");
+  const descricaoPagina = document.getElementById("descricaoPagina");
+  if (tituloPagina) tituloPagina.textContent = "Atualizar Produto";
+  if (descricaoPagina) {
+    descricaoPagina.textContent = `Atualize os dados do produto #${produto.produtoid}.`;
+  }
+
+  mensagem.textContent = "";
+  mensagem.className = "";
+
+  // Só mostra o formulário depois que ele já está preenchido com os
+  // dados do produto, evitando o "flash" da tela de cadastro vazia.
+  document.documentElement.classList.remove("carregando-edicao");
 
   formProdutos.scrollIntoView({ behavior: "smooth" });
 }
@@ -237,7 +282,7 @@ function voltarParaModoCadastro() {
 formProdutos.addEventListener("submit", async function (evento) {
   evento.preventDefault();
 
-  const categoria = extrairCodigoDoTexto(catProdSelect.value);
+  const categoria = catProdIdInput.value;
 
   if (!categoria) {
     mensagem.textContent =
@@ -317,9 +362,22 @@ formProdutos.addEventListener("submit", async function (evento) {
     return;
   }
 
-  mensagem.textContent = idProdutoEmEdicao
-    ? "Produto atualizado com sucesso!"
-    : "Produto salvo com sucesso!";
+  if (idProdutoEmEdicao) {
+    // Atualização de produto existente: mantém os valores no formulário
+    // e só mostra a mensagem de sucesso, sem voltar para o modo cadastro.
+    mensagem.textContent = "Produto atualizado com sucesso!";
+    mensagem.className = "sucesso";
+
+    setTimeout(() => {
+      mensagem.textContent = "";
+      mensagem.className = "";
+    }, 5000);
+
+    return;
+  }
+
+  // Cadastro de produto novo: limpa o formulário e volta para o modo cadastro
+  mensagem.textContent = "Produto salvo com sucesso!";
   mensagem.className = "sucesso";
 
   voltarParaModoCadastro();
@@ -374,4 +432,22 @@ document.addEventListener("DOMContentLoaded", function () {
       this.setSelectionRange(inicioCursor, fimCursor);
     });
   });
+});
+/*
+  =====================================================
+  BOTÃO VOLTAR: FECHA A ABA EM VEZ DE NAVEGAR
+  =====================================================
+  Como esta página é sempre aberta em uma nova aba (a partir do menu),
+  "Voltar" deve fechar a aba atual e devolver o usuário para a aba do
+  menu que já estava aberta, em vez de carregar menu.html aqui e ir
+  acumulando abas.
+*/
+document.getElementById("botaoVoltarForm")?.addEventListener("click", function () {
+  window.close();
+
+  // Se o navegador não deixar fechar (ex.: a página foi aberta digitando
+  // a URL direto, e não por um link/script), caímos de volta para o menu.
+  setTimeout(() => {
+    window.location.href = "menu.html";
+  }, 300);
 });

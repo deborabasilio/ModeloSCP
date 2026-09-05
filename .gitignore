@@ -1,0 +1,53 @@
+# Variáveis de ambiente e configurações locais com credenciais
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# Configurações locais do Supabase (podem conter tokens de acesso)
+supabase/.temp/
+supabase/config.local.toml
+supabase/.env
+supabase/.env.*
+!supabase/.env.example
+
+# Arquivos locais usados pelo front-end para injetar configurações.
+# Mantenha no repositório apenas versões *.example.js sem valores reais.
+scripts/config.local.js
+scripts/supabase.local.js
+scripts/credentials.local.js
+
+# Chaves, certificados e arquivos de credenciais
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*-credentials.json
+*service-account*.json
+service-account.json
+credentials.json
+
+# Logs, relatórios e dados locais
+*.log
+logs/
+coverage/
+.nyc_output/
+
+# Dependências e diretórios de build
+node_modules/
+dist/
+build/
+.cache/
+
+# Arquivos de sistema e editores
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo

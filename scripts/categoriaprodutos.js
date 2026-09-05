@@ -94,6 +94,9 @@ async function mostrarProximoCodigo() {
   o que acontece ao clicar em "Editar" na listagem do menu.
 */
 async function carregarCategoriaNoFormulario(idCategoria) {
+  mensagem.textContent = "Carregando dados da categoria...";
+  mensagem.className = "";
+
   const { data: categoria, error } = await supabaseClient
     .from(NOME_TABELA)
     .select("*")
@@ -104,6 +107,7 @@ async function carregarCategoriaNoFormulario(idCategoria) {
     mensagem.textContent = "Não foi possível carregar esta categoria.";
     mensagem.className = "erro";
     console.error(error);
+    document.documentElement.classList.remove("carregando-edicao");
     return;
   }
 
@@ -112,6 +116,20 @@ async function carregarCategoriaNoFormulario(idCategoria) {
 
   idCategoriaEmEdicao = categoria.categoriaprodutoid;
   botaoSalvar.textContent = "Atualizar Categoria";
+
+  const tituloPagina = document.getElementById("tituloPagina");
+  const descricaoPagina = document.getElementById("descricaoPagina");
+  if (tituloPagina) tituloPagina.textContent = "Atualizar Categoria";
+  if (descricaoPagina) {
+    descricaoPagina.textContent = `Atualize os dados da categoria #${categoria.categoriaprodutoid}.`;
+  }
+
+  mensagem.textContent = "";
+  mensagem.className = "";
+
+  // Só mostra o formulário depois que ele já está preenchido com os
+  // dados da categoria, evitando o "flash" da tela de cadastro vazia.
+  document.documentElement.classList.remove("carregando-edicao");
 }
 
 /*
@@ -185,14 +203,25 @@ formCategoria.addEventListener("submit", async function (evento) {
     return;
   }
 
-  mensagem.textContent = idCategoriaEmEdicao
-    ? "Categoria atualizada com sucesso!"
-    : "Categoria salva com sucesso!";
+  if (idCategoriaEmEdicao) {
+    // Atualização de categoria existente: mantém os valores no formulário
+    // e só mostra a mensagem de sucesso, sem voltar para o modo cadastro.
+    mensagem.textContent = "Categoria atualizada com sucesso!";
+    mensagem.className = "sucesso";
+
+    setTimeout(() => {
+      mensagem.textContent = "";
+      mensagem.className = "";
+    }, 5000);
+
+    return;
+  }
+
+  // Cadastro de categoria nova: limpa o formulário para o próximo cadastro
+  mensagem.textContent = "Categoria salva com sucesso!";
   mensagem.className = "sucesso";
 
   formCategoria.reset();
-  idCategoriaEmEdicao = null;
-  botaoSalvar.textContent = "Salvar Categoria";
 
   // Depois de salvar, atualizamos o preview do próximo código.
   mostrarProximoCodigo();
@@ -224,4 +253,22 @@ document.addEventListener("DOMContentLoaded", function () {
       this.setSelectionRange(inicioCursor, fimCursor);
     });
   });
+});
+/*
+  =====================================================
+  BOTÃO VOLTAR: FECHA A ABA EM VEZ DE NAVEGAR
+  =====================================================
+  Como esta página é sempre aberta em uma nova aba (a partir do menu),
+  "Voltar" deve fechar a aba atual e devolver o usuário para a aba do
+  menu que já estava aberta, em vez de carregar menu.html aqui e ir
+  acumulando abas.
+*/
+document.getElementById("botaoVoltarForm")?.addEventListener("click", function () {
+  window.close();
+
+  // Se o navegador não deixar fechar (ex.: a página foi aberta digitando
+  // a URL direto, e não por um link/script), caímos de volta para o menu.
+  setTimeout(() => {
+    window.location.href = "menu.html";
+  }, 300);
 });

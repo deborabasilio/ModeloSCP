@@ -3,6 +3,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_MHgrDJpm8wa4mGTJWPR0sg_08Bc9dut";
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Extrai o código escondido no formato "Nome (Código: 5)" que o datalist usa internamente
 function extrairCodigoDoTexto(texto) {
   const match = String(texto || "").match(/\(Código:\s*(\d+)\)\s*$/);
   return match ? match[1] : null;
@@ -16,10 +17,12 @@ const TABELA_PRODUTOS = "produtos";
 const formOrcamento = document.getElementById("formOrcamento");
 const codigoOrcamentoInput = document.getElementById("codigoOrcamento");
 const clienteSelecSelect = document.getElementById("clienteSelec");
+const clienteSelecIdInput = document.getElementById("clienteSelecId");
 const dataOrcamentoInput = document.getElementById("dataOrcamento");
 const validadeOrcamentoInput = document.getElementById("validadeOrcamento");
 
 const produtoOrcSelect = document.getElementById("produtoOrc");
+const produtoOrcIdInput = document.getElementById("produtoOrcId");
 const descProdutoOrcInput = document.getElementById("descProdutoOrc");
 const qtdeProdutoOrcInput = document.getElementById("qtdeProdutoOrc");
 const valorUnitarioInput = document.getElementById("valorUnitario");
@@ -27,6 +30,8 @@ const valorTotalItemInput = document.getElementById("valorTotalItem");
 const btnAdicionarItem = document.getElementById("btnAdicionarItem");
 const corpoListaItens = document.getElementById("corpoListaItens");
 const valorTotalOrcamentoInput = document.getElementById("valorTotalOrcamento");
+const descontoOrcamentoInput = document.getElementById("descontoOrcamento");
+const valorFinalOrcamentoInput = document.getElementById("valorFinalOrcamento");
 
 const mensagem = document.getElementById("mensagem");
 
@@ -36,6 +41,7 @@ const visCliente = document.getElementById("visCliente");
 const visData = document.getElementById("visData");
 const visValidade = document.getElementById("visValidade");
 const visStatus = document.getElementById("visStatus");
+const visDesconto = document.getElementById("visDesconto");
 const visCorpoItens = document.getElementById("visCorpoItens");
 const visTotal = document.getElementById("visTotal");
 const visAcoesAprovacao = document.getElementById("visAcoesAprovacao");
@@ -44,6 +50,10 @@ const btnReprovarOrcamento = document.getElementById("btnReprovarOrcamento");
 const btnImprimirVis = document.getElementById("btnImprimirVis"); // Botão de imprimir na visualização
 
 let itensDoOrcamento = [];
+
+// Guarda o ID do orçamento quando estamos editando (null = cadastro novo)
+let idOrcamentoEmEdicao = null;
+const botaoSalvarOrcamento = document.getElementById("botaoSalvarOrcamento");
 
 const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
 
@@ -70,6 +80,45 @@ function formatarMoeda(valor) {
     maximumFractionDigits: 2,
   });
 }
+
+// Converte o que foi digitado no campo de desconto (aceita "10", "10,5"
+// ou "10.5") em um número entre 0 e 100.
+function converterPercentualParaNumero(valorDigitado) {
+  if (!valorDigitado) return 0;
+
+  const somenteNumero = String(valorDigitado).replace(/[^\d,.-]/g, "");
+  const numero = Number(
+    somenteNumero.includes(",")
+      ? somenteNumero.replace(/\./g, "").replace(",", ".")
+      : somenteNumero,
+  );
+
+  if (isNaN(numero)) return 0;
+
+  // Não deixa o desconto passar de 0% a 100%
+  return Math.min(Math.max(numero, 0), 100);
+}
+
+// Guarda o subtotal (soma dos itens, sem desconto) para recalcular o
+// valor final sempre que o usuário mudar a % de desconto.
+let subtotalAtualOrcamento = 0;
+
+// Recalcula e exibe o "Valor Total com Desconto" a partir do subtotal
+// atual dos itens e da % digitada no campo de desconto.
+function recalcularValorFinalOrcamento() {
+  const percentualDesconto = converterPercentualParaNumero(
+    descontoOrcamentoInput.value,
+  );
+  const valorComDesconto =
+    subtotalAtualOrcamento -
+    (subtotalAtualOrcamento * percentualDesconto) / 100;
+
+  valorFinalOrcamentoInput.value = "R$ " + formatarMoeda(valorComDesconto);
+
+  return valorComDesconto;
+}
+
+descontoOrcamentoInput.addEventListener("input", recalcularValorFinalOrcamento);
 
 dataOrcamentoInput.value = new Date().toLocaleString("pt-BR");
 
@@ -108,6 +157,21 @@ async function carregarClientes() {
   });
 }
 
+// Assim que o texto digitado bate com um cliente da lista, guarda o
+// código no campo escondido e limpa o "(Código: X)" do campo visível.
+clienteSelecSelect.addEventListener("input", function () {
+  const codigo = extrairCodigoDoTexto(clienteSelecSelect.value);
+
+  if (codigo) {
+    clienteSelecSelect.value = clienteSelecSelect.value.replace(
+      /\s*\(Código:\s*\d+\)\s*$/,
+      "",
+    );
+  }
+
+  clienteSelecIdInput.value = codigo || "";
+});
+
 let mapaProdutosPorId = {};
 
 async function carregarProdutos() {
@@ -138,8 +202,20 @@ async function carregarProdutos() {
   });
 }
 
+// Assim que o texto digitado bate com um produto da lista, guarda o
+// código no campo escondido e limpa o "(Código: X)" do campo visível.
 produtoOrcSelect.addEventListener("input", function () {
   const idProduto = extrairCodigoDoTexto(produtoOrcSelect.value);
+
+  if (idProduto) {
+    produtoOrcSelect.value = produtoOrcSelect.value.replace(
+      /\s*\(Código:\s*\d+\)\s*$/,
+      "",
+    );
+  }
+
+  produtoOrcIdInput.value = idProduto || "";
+
   const produto = idProduto ? mapaProdutosPorId[idProduto] : null;
 
   if (!produto) {
@@ -155,7 +231,7 @@ produtoOrcSelect.addEventListener("input", function () {
 });
 
 function recalcularValorTotalItem() {
-  const idProduto = extrairCodigoDoTexto(produtoOrcSelect.value);
+  const idProduto = produtoOrcIdInput.value;
   const produto = idProduto ? mapaProdutosPorId[idProduto] : null;
 
   if (!produto) { valorTotalItemInput.value = ""; return; }
@@ -168,7 +244,7 @@ function recalcularValorTotalItem() {
 qtdeProdutoOrcInput.addEventListener("input", recalcularValorTotalItem);
 
 btnAdicionarItem.addEventListener("click", function () {
-  const idProduto = extrairCodigoDoTexto(produtoOrcSelect.value);
+  const idProduto = produtoOrcIdInput.value;
   const produto = idProduto ? mapaProdutosPorId[idProduto] : null;
   const quantidade = Number(qtdeProdutoOrcInput.value);
 
@@ -195,6 +271,7 @@ btnAdicionarItem.addEventListener("click", function () {
   mensagem.textContent = "";
   mensagem.className = "";
   produtoOrcSelect.value = "";
+  produtoOrcIdInput.value = "";
   descProdutoOrcInput.value = "";
   qtdeProdutoOrcInput.value = 1;
   valorUnitarioInput.value = "";
@@ -230,6 +307,9 @@ function desenharListaDeItens() {
   );
 
   valorTotalOrcamentoInput.value = "R$ " + formatarMoeda(valorTotalOrcamento);
+
+  subtotalAtualOrcamento = valorTotalOrcamento;
+  recalcularValorFinalOrcamento();
 }
 
 desenharListaDeItens();
@@ -248,7 +328,7 @@ corpoListaItens.addEventListener("click", function (evento) {
 formOrcamento.addEventListener("submit", async function (evento) {
   evento.preventDefault();
 
-  const idCliente = extrairCodigoDoTexto(clienteSelecSelect.value);
+  const idCliente = clienteSelecIdInput.value;
 
   if (!idCliente) {
     mensagem.textContent = "Selecione o cliente da lista.";
@@ -262,11 +342,99 @@ formOrcamento.addEventListener("submit", async function (evento) {
     0,
   );
 
+  // Garante que subtotalAtualOrcamento está sincronizado antes de calcular
+  // o valor final (evita depender só do "input" do campo de desconto).
+  subtotalAtualOrcamento = valorTotalOrcamento;
+  const valorFinalComDesconto = recalcularValorFinalOrcamento();
+  const percentualDescontoAtual = converterPercentualParaNumero(
+    descontoOrcamentoInput.value,
+  );
+
+  // =====================================================
+  // FLUXO DE ATUALIZAÇÃO (quando o orçamento já existe)
+  // =====================================================
+  if (idOrcamentoEmEdicao) {
+    const dadosOrcamentoAtualizado = {
+      clienteid: idCliente,
+      dt_validade_orcamento: new Date(
+        validadeOrcamentoInput.value,
+      ).toISOString(),
+      vl_total_orcamento: valorFinalComDesconto,
+      vl_desconto_orcamento: percentualDescontoAtual,
+    };
+
+    const { error: erroOrcamento } = await supabaseClient
+      .from(TABELA_ORCAMENTO)
+      .update(dadosOrcamentoAtualizado)
+      .eq("orcamentoid", idOrcamentoEmEdicao);
+
+    if (erroOrcamento) {
+      mensagem.textContent =
+        "Erro ao atualizar orçamento: " + erroOrcamento.message;
+      mensagem.className = "erro";
+      console.error(erroOrcamento);
+      return;
+    }
+
+    // Substitui todos os itens antigos pelos itens atuais da tela,
+    // já que não temos como saber quais foram removidos/alterados.
+    const { error: erroExclusaoItens } = await supabaseClient
+      .from(TABELA_ITENS)
+      .delete()
+      .eq("orcamentoid", idOrcamentoEmEdicao);
+
+    if (erroExclusaoItens) {
+      mensagem.textContent =
+        "Orçamento atualizado, mas houve erro ao atualizar os itens: " +
+        erroExclusaoItens.message;
+      mensagem.className = "erro";
+      console.error(erroExclusaoItens);
+      return;
+    }
+
+    const itensParaAtualizar = itensDoOrcamento.map((item) => ({
+      orcamentoid: idOrcamentoEmEdicao,
+      produtoid: item.produtoid,
+      qt_produto: item.quantidade,
+      vl_unitario: item.valor_unitario,
+      vl_total: item.valor_total_item,
+    }));
+
+    if (itensParaAtualizar.length > 0) {
+      const { error: erroItens } = await supabaseClient
+        .from(TABELA_ITENS)
+        .insert(itensParaAtualizar);
+
+      if (erroItens) {
+        mensagem.textContent =
+          "Orçamento atualizado, mas houve erro ao salvar os itens: " +
+          erroItens.message;
+        mensagem.className = "erro";
+        console.error(erroItens);
+        return;
+      }
+    }
+
+    mensagem.textContent = "Orçamento atualizado com sucesso!";
+    mensagem.className = "sucesso";
+
+    setTimeout(() => {
+      mensagem.textContent = "";
+      mensagem.className = "";
+    }, 5000);
+
+    return;
+  }
+
+  // =====================================================
+  // FLUXO DE CADASTRO (orçamento novo)
+  // =====================================================
   const novoOrcamento = {
     clienteid: idCliente,
     dt_orcamento: new Date().toISOString(),
     dt_validade_orcamento: new Date(validadeOrcamentoInput.value).toISOString(),
-    vl_total_orcamento: valorTotalOrcamento,
+    vl_total_orcamento: valorFinalComDesconto,
+    vl_desconto_orcamento: percentualDescontoAtual,
     status_orcamento: "PENDENTE",
   };
 
@@ -329,6 +497,7 @@ async function carregarOrcamentoParaVisualizacao(idOrcamento) {
       dt_validade_orcamento,
       vl_total_orcamento,
       status_orcamento,
+      vl_desconto_orcamento,
       clientes(nome_cliente),
       orcamento_item(qt_produto, vl_unitario, vl_total, produtos(ds_produto))
     `,
@@ -355,6 +524,9 @@ async function carregarOrcamentoParaVisualizacao(idOrcamento) {
     orcamento.dt_validade_orcamento,
   ).toLocaleDateString("pt-BR");
   visStatus.textContent = orcamento.status_orcamento;
+  visDesconto.textContent = orcamento.vl_desconto_orcamento
+    ? `${orcamento.vl_desconto_orcamento}%`
+    : "Nenhum";
   visTotal.textContent = formatarMoeda(orcamento.vl_total_orcamento);
 
   const itens = orcamento.orcamento_item || [];
@@ -381,8 +553,101 @@ async function carregarOrcamentoParaVisualizacao(idOrcamento) {
   }
 }
 
+async function carregarOrcamentoParaEdicao(idOrcamento) {
+  mensagem.textContent = "Carregando dados do orçamento...";
+  mensagem.className = "";
+
+  const { data: orcamento, error } = await supabaseClient
+    .from(TABELA_ORCAMENTO)
+    .select(
+      `
+      orcamentoid,
+      clienteid,
+      dt_orcamento,
+      dt_validade_orcamento,
+      status_orcamento,
+      vl_desconto_orcamento,
+      clientes(nome_cliente),
+      orcamento_item(produtoid, qt_produto, vl_unitario, vl_total, produtos(ds_produto))
+    `,
+    )
+    .eq("orcamentoid", idOrcamento)
+    .single();
+
+  if (error || !orcamento) {
+    mensagem.textContent = "Não foi possível carregar este orçamento para edição.";
+    mensagem.className = "erro";
+    console.error(error);
+    document.documentElement.classList.remove("carregando-edicao");
+    return;
+  }
+
+  // Só faz sentido editar orçamentos ainda pendentes: um orçamento já
+  // finalizado já baixou estoque, e um reprovado já foi encerrado.
+  if (orcamento.status_orcamento !== "PENDENTE") {
+    alert(
+      "Somente orçamentos com status PENDENTE podem ser editados. Abrindo em modo de visualização.",
+    );
+    document.documentElement.classList.remove("carregando-edicao");
+    carregarOrcamentoParaVisualizacao(idOrcamento);
+    return;
+  }
+
+  idOrcamentoEmEdicao = orcamento.orcamentoid;
+
+  // Precisamos das listas de clientes e produtos carregadas para que os
+  // campos de busca (datalist) funcionem caso o usuário queira trocá-los.
+  await carregarClientes();
+  await carregarProdutos();
+
+  codigoOrcamentoInput.value = orcamento.orcamentoid;
+  clienteSelecSelect.value = orcamento.clientes?.nome_cliente ?? "";
+  clienteSelecIdInput.value = orcamento.clienteid ?? "";
+  dataOrcamentoInput.value = new Date(orcamento.dt_orcamento).toLocaleString(
+    "pt-BR",
+  );
+
+  validadeOrcamentoInput.value = orcamento.dt_validade_orcamento
+    ? new Date(orcamento.dt_validade_orcamento).toISOString().slice(0, 10)
+    : "";
+
+  itensDoOrcamento = (orcamento.orcamento_item || []).map((item) => ({
+    produtoid: item.produtoid,
+    descricao_produto: item.produtos?.ds_produto ?? "Produto removido",
+    quantidade: item.qt_produto,
+    valor_unitario: item.vl_unitario,
+    valor_total_item: item.vl_total,
+  }));
+
+  // Preenche o desconto salvo (se a coluna vl_desconto_orcamento ainda não
+  // existir no banco, cai no "0" de forma segura). O recálculo do valor
+  // final acontece dentro de desenharListaDeItens(), então precisa vir
+  // antes dela.
+  descontoOrcamentoInput.value = orcamento.vl_desconto_orcamento ?? 0;
+
+  desenharListaDeItens();
+
+  if (descricaoHeader) {
+    descricaoHeader.textContent = `Atualizando o orçamento nº ${orcamento.orcamentoid}.`;
+  }
+
+  const tituloPagina = document.getElementById("tituloPagina");
+  if (tituloPagina) tituloPagina.textContent = "Atualizar Orçamento";
+
+  if (botaoSalvarOrcamento) {
+    botaoSalvarOrcamento.textContent = "Atualizar Orçamento";
+  }
+
+  mensagem.textContent = "";
+  mensagem.className = "";
+
+  // Só mostra o formulário depois que ele já está preenchido com os
+  // dados do orçamento, evitando o "flash" da tela de cadastro vazia.
+  document.documentElement.classList.remove("carregando-edicao");
+}
+
 async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
-  if (novoStatus === "FINALIZADO") {
+  if (novoStatus === "APROVADO") {
     const { data: itens } = await supabaseClient
       .from("orcamento_item")
       .select("produtoid, qt_produto")
@@ -422,7 +687,7 @@ async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
   }
 
   mensagem.textContent =
-    novoStatus === "FINALIZADO"
+    novoStatus === "APROVADO"
       ? "Orçamento aprovado e estoque atualizado com sucesso!"
       : "Orçamento reprovado.";
   mensagem.className = "sucesso";
@@ -437,7 +702,7 @@ async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
 }
 
 btnAprovarOrcamento?.addEventListener("click", () => {
-  atualizarStatusOrcamento(visCodigo.textContent, "FINALIZADO");
+  atualizarStatusOrcamento(visCodigo.textContent, "APROVADO");
 });
 
 btnReprovarOrcamento?.addEventListener("click", () => {
@@ -450,11 +715,14 @@ btnImprimirVis?.addEventListener("click", () => {
 });
 
 const parametrosUrl = new URLSearchParams(window.location.search);
-const idOrcamentoParaVisualizar = parametrosUrl.get("id");
+const idOrcamentoParaAcessar = parametrosUrl.get("id");
+const modoAcesso = parametrosUrl.get("modo");
 const descricaoHeader = document.getElementById("descricaoHeader");
 
-if (idOrcamentoParaVisualizar) {
-  carregarOrcamentoParaVisualizacao(idOrcamentoParaVisualizar);
+if (idOrcamentoParaAcessar && modoAcesso === "editar") {
+  carregarOrcamentoParaEdicao(idOrcamentoParaAcessar);
+} else if (idOrcamentoParaAcessar) {
+  carregarOrcamentoParaVisualizacao(idOrcamentoParaAcessar);
 } else {
   if (descricaoHeader) {
     descricaoHeader.textContent =
@@ -478,3 +746,30 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 });
+/*
+  =====================================================
+  BOTÕES VOLTAR: FECHAM A ABA EM VEZ DE NAVEGAR
+  =====================================================
+  Como esta página é sempre aberta em uma nova aba (a partir do menu),
+  "Voltar" deve fechar a aba atual e devolver o usuário para a aba do
+  menu que já estava aberta, em vez de carregar menu.html aqui e ir
+  acumulando abas. Vale tanto para o botão do formulário quanto para o
+  botão da tela de visualização/aprovação.
+*/
+function voltarFechandoAba() {
+  window.close();
+
+  // Se o navegador não deixar fechar (ex.: a página foi aberta digitando
+  // a URL direto, e não por um link/script), caímos de volta para o menu.
+  setTimeout(() => {
+    window.location.href = "menu.html";
+  }, 300);
+}
+
+document
+  .getElementById("botaoVoltarForm")
+  ?.addEventListener("click", voltarFechandoAba);
+
+document
+  .getElementById("botaoVoltarVis")
+  ?.addEventListener("click", voltarFechandoAba);

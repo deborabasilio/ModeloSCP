@@ -5,9 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Categorias de Produtos</title>
     <link rel="stylesheet" href="styles/admin.css">
+    <script>
+      if (new URLSearchParams(window.location.search).has("id")) {
+        document.documentElement.classList.add("carregando-edicao");
+      }
+    </script>
 </head>
 <body>
-    <header class="page-header"><h1>Categorias</h1><p>Organize os grupos do seu catálogo.</p></header>
+    <header class="page-header"><h1 id="tituloPagina">Categorias</h1><p id="descricaoPagina">Organize os grupos do seu catálogo.</p></header>
     <div class="container">
 
       <form id="categoriaProdutos">
@@ -18,7 +23,7 @@
         <input type="text" id="descricaoCategoria" required>
 
         <button type="submit" id="botao">Salvar</button>
-        <button type="button" id="botaoVoltarForm" onclick="window.location.href='menu.html'">Voltar</button>
+        <button type="button" id="botaoVoltarForm">Voltar</button>
       </form>
 
       <p id="mensagem"></p>

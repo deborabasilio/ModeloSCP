@@ -5,10 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Orçamentos</title>
     <link rel="stylesheet" href="styles/admin.css" />
+    <script>
+      const parametrosIniciais = new URLSearchParams(window.location.search);
+      if (parametrosIniciais.has("id")) {
+        if (parametrosIniciais.get("modo") === "editar") {
+          document.documentElement.classList.add("carregando-edicao");
+        } else {
+          document.documentElement.classList.add("modo-visualizacao");
+        }
+      }
+    </script>
   </head>
   <body>
     <header class="page-header">
-      <h1>Orçamentos</h1>
+      <h1 id="tituloPagina">Orçamentos</h1>
       <p id="descricaoHeader">Acompanhe propostas comerciais.</p>
     </header>
     <div class="container">
@@ -27,6 +37,7 @@
             <strong>Data de Validade:</strong> <span id="visValidade"></span>
           </p>
           <p><strong>Status Atual:</strong> <span id="visStatus"></span></p>
+          <p><strong>Desconto Aplicado:</strong> <span id="visDesconto"></span></p>
 
           <table class="tabela-registros tabela-visualizacao-orcamento">
             <thead>
@@ -65,7 +76,6 @@
             <button
               type="button"
               id="botaoVoltarVis"
-              onclick="window.location.href = 'menu.html'"
             >
               Voltar
             </button>
@@ -86,6 +96,7 @@
           autocomplete="new-off-clientes"
           required
         />
+        <input type="hidden" id="clienteSelecId" />
         <datalist id="listaClientes"></datalist>
 
         <label for="dataOrcamento">Data do Orçamento:</label>
@@ -104,6 +115,7 @@
           autocomplete="new-off-produtos"
           placeholder="Digite para buscar o produto..."
         />
+        <input type="hidden" id="produtoOrcId" />
         <datalist id="listaProdutosOrc"></datalist>
 
         <label for="descProdutoOrc">Descrição:</label>
@@ -140,11 +152,22 @@
         <label for="valorTotalOrcamento">Valor Total do Orçamento:</label>
         <input type="text" id="valorTotalOrcamento" readonly value="R$ 0,00" />
 
-        <button type="submit">Salvar</button>
+        <label for="descontoOrcamento">Desconto (%):</label>
+        <input
+          type="text"
+          id="descontoOrcamento"
+          inputmode="decimal"
+          placeholder="0"
+          value="0"
+        />
+
+        <label for="valorFinalOrcamento">Valor Total com Desconto:</label>
+        <input type="text" id="valorFinalOrcamento" readonly value="R$ 0,00" />
+
+        <button type="submit" id="botaoSalvarOrcamento">Salvar</button>
         <button
           type="button"
           id="botaoVoltarForm"
-          onclick="window.location.href = 'menu.html'"
         >
           Voltar
         </button>

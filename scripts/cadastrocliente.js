@@ -145,6 +145,9 @@ async function buscarProximoCodigo() {
   o que acontece ao clicar em "Editar" na listagem do menu.
 */
 async function carregarClienteNoFormulario(idCliente) {
+  mensagem.textContent = "Carregando dados do cliente...";
+  mensagem.className = "";
+
   const { data: cliente, error } = await supabaseClient
     .from("clientes")
     .select("*")
@@ -155,16 +158,44 @@ async function carregarClienteNoFormulario(idCliente) {
     mensagem.textContent = "Não foi possível carregar este cliente.";
     mensagem.className = "erro";
     console.error(error);
+    document.documentElement.classList.remove("carregando-edicao");
     return;
   }
 
   codigoOrcamentoInput.value = cliente.clienteid;
   tipoClienteInput.value = cliente.tipo_cliente;
-  cpfCnpjClienteInput.value = cliente.cpf_cnpj_cliente;
+
+  // O campo de CPF/CNPJ começa desabilitado (só libera quando o usuário
+  // troca o "Tipo de Cliente" manualmente, via evento "change"). Como aqui
+  // estamos preenchendo o tipo por código (sem o usuário mexer no select),
+  // esse evento nunca dispara e o campo ficava travado. Por isso liberamos
+  // e configuramos o campo manualmente, do mesmo jeito que o evento faria.
+  cpfCnpjClienteInput.disabled = false;
+  cpfCnpjClienteInput.placeholder =
+    cliente.tipo_cliente === "F" ? "000.000.000-00" : "00.000.000/0000-00";
+  cpfCnpjClienteInput.value = formatarCpfCnpj(
+    cliente.cpf_cnpj_cliente,
+    cliente.tipo_cliente,
+  );
+
   nomeClienteInput.value = cliente.nome_cliente;
 
   idClienteEmEdicao = cliente.clienteid;
   botaoSalvar.textContent = "Atualizar Cliente";
+
+  const tituloPagina = document.getElementById("tituloPagina");
+  const descricaoPagina = document.getElementById("descricaoPagina");
+  if (tituloPagina) tituloPagina.textContent = "Atualizar Cliente";
+  if (descricaoPagina) {
+    descricaoPagina.textContent = `Atualize os dados do cliente #${cliente.clienteid}.`;
+  }
+
+  mensagem.textContent = "";
+  mensagem.className = "";
+
+  // Só mostra o formulário depois que ele já está preenchido com os
+  // dados do cliente, evitando o "flash" da tela de cadastro vazia.
+  document.documentElement.classList.remove("carregando-edicao");
 }
 
 /*
@@ -234,15 +265,25 @@ formCliente.addEventListener("submit", async function (evento) {
     return;
   }
 
-  mensagem.textContent = idClienteEmEdicao
-    ? `Cliente #${idGerado} atualizado com sucesso!`
-    : `Cliente #${idGerado} salvo com sucesso!`;
+  if (idClienteEmEdicao) {
+    // Atualização de cliente existente: mantém os valores no formulário
+    // e só mostra a mensagem de sucesso, sem voltar para o modo cadastro.
+    mensagem.textContent = `Cliente #${idGerado} atualizado com sucesso!`;
+    mensagem.className = "sucesso";
+
+    setTimeout(() => {
+      mensagem.textContent = "";
+      mensagem.className = "";
+    }, 5000);
+
+    return;
+  }
+
+  // Cadastro de cliente novo: limpa o formulário para o próximo cadastro
+  mensagem.textContent = `Cliente #${idGerado} salvo com sucesso!`;
   mensagem.className = "sucesso";
 
-  // Limpa o formulário e volta para o modo de cadastro novo
   formCliente.reset();
-  idClienteEmEdicao = null;
-  botaoSalvar.textContent = "Salvar";
 
   // Busca o próximo código para o usuário já cadastrar o próximo cliente
   buscarProximoCodigo();
@@ -274,4 +315,23 @@ document.addEventListener("DOMContentLoaded", function () {
       this.setSelectionRange(inicioCursor, fimCursor);
     });
   });
+});
+
+/*
+  =====================================================
+  BOTÃO VOLTAR: FECHA A ABA EM VEZ DE NAVEGAR
+  =====================================================
+  Como esta página é sempre aberta em uma nova aba (a partir do menu),
+  "Voltar" deve fechar a aba atual e devolver o usuário para a aba do
+  menu que já estava aberta, em vez de carregar menu.html aqui e ir
+  acumulando abas.
+*/
+document.getElementById("botaoVoltarForm")?.addEventListener("click", function () {
+  window.close();
+
+  // Se o navegador não deixar fechar (ex.: a página foi aberta digitando
+  // a URL direto, e não por um link/script), caímos de volta para o menu.
+  setTimeout(() => {
+    window.location.href = "menu.html";
+  }, 300);
 });

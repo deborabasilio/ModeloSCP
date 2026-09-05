@@ -157,6 +157,20 @@ button.botao-secundario:hover {
   display: none;
 }
 
+/* Evita que o formulário de cadastro apareça enquanto a visualização carrega. */
+html.modo-visualizacao #formOrcamento {
+  display: none;
+}
+
+/* Evita o "flash" da tela de cadastro (vazia) antes dos dados do
+   registro que está sendo editado terminarem de carregar do banco. */
+html.carregando-edicao #formCliente,
+html.carregando-edicao #categoriaProdutos,
+html.carregando-edicao #formProdutos,
+html.carregando-edicao #formOrcamento {
+  display: none;
+}
+
 /* =========================================
    VISUALIZAÇÃO / APROVAÇÃO DE UM ORÇAMENTO
 ========================================= */
@@ -260,49 +274,6 @@ button.botao-secundario:hover {
 
 .tabela-registros tbody tr:last-child td {
   border-bottom: none;
-}
-
-.btn-editar,
-.btn-excluir {
-  min-height: auto;
-  padding: 6px 12px;
-  margin-right: 6px;
-  border-radius: 6px;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.btn-editar {
-  background: #f59e0b;
-}
-
-.btn-editar:hover {
-  background: #d97706;
-}
-
-.btn-excluir {
-  background: #dc2626;
-}
-
-.btn-excluir:hover {
-  background: #b91c1c;
-}
-
-/* Estilo do botão de imprimir na listagem de pesquisa */
-.btn-imprimir {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  margin-left: 8px;
-  transition: 0.3s;
-}
-
-.btn-imprimir:hover {
-  background-color: #2563eb;
 }
 
 .lista-itens-orcamento {

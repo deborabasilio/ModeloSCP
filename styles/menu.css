@@ -20,6 +20,13 @@
   box-sizing: border-box;
 }
 
+/* Remove a margem padrão do navegador no body, para a barra de menu
+   (o retângulo azul-marinho com Painel, Clientes, etc.) encostar
+   totalmente no topo e nas laterais da página. */
+body {
+  margin: 0;
+}
+
 /* Container do menu (Nav) */
 .menu-principal {
   background-color: var(--navy);
@@ -251,94 +258,87 @@
   background-color: #f8fafc;
 }
 
-.btn-editar {
-  background-color: #f59e0b;
-  color: white;
-  border: none;
-  padding: 6px 12px;
+/* =========================================
+   MENU DE AÇÕES POR LINHA (Editar/Visualizar/
+   Aprovar/Reprovar/Excluir agrupados atrás de
+   um único botão "⋮", em vez de um botão
+   colorido solto para cada ação)
+   ========================================= */
+.menu-acoes {
+  position: relative;
+  display: inline-block;
+}
+
+.btn-menu-acoes {
+  min-width: 36px;
+  min-height: 32px;
+  padding: 4px 10px;
+  background-color: transparent;
+  border: 1px solid var(--border);
   border-radius: 6px;
+  color: var(--navy);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
   cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-menu-acoes:hover {
+  background-color: #eef2f8;
+}
+
+.menu-acoes-dropdown {
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 160px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  z-index: 50;
+}
+
+.menu-acoes-dropdown.mostrar-menu-acoes {
+  display: flex;
+}
+
+.menu-acoes-dropdown button {
+  min-height: auto;
+  margin: 0;
+  padding: 10px 16px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background-color: var(--surface);
+  color: var(--text);
   font-family: inherit;
   font-weight: 700;
-}
-
-.btn-editar:hover {
-  background-color: #d97706;
-}
-
-.btn-excluir {
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
+  font-size: 0.85rem;
+  text-align: left;
   cursor: pointer;
-  font-family: inherit;
-  font-weight: 700;
-  margin-left: 8px;
-  transition: 0.3s;
+  transition: background-color 0.15s;
 }
 
-.btn-excluir:hover {
-  background-color: #dc2626;
+.menu-acoes-dropdown button:last-child {
+  border-bottom: none;
 }
 
-.btn-imprimir {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  padding: 6px 12px;          
-  border-radius: 6px;         
-  cursor: pointer;
-  font-weight: 700;  
-  font-family: inherit;         
-  margin-left: 8px;           
-  transition: 0.3s;
+.menu-acoes-dropdown button:hover {
+  background-color: #f8fafc;
 }
 
-.btn-imprimir:hover {
-  background-color: #2563eb;
-}
-
-.btn-aprovar {
-  background-color: #16a34a;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: inherit;
-  font-weight: 700;
-  margin-left: 8px;
-}
-
-.btn-aprovar:hover {
-  background-color: #15803d;
-}
-
-.btn-reprovar {
-  background-color: #6b7280;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: inherit;
-  font-weight: 700;
-  margin-left: 8px;
-}
-
-.btn-reprovar:hover {
-  background-color: #4b5563;
-}
-
-.btn-editar,
-.btn-excluir,
-.btn-aprovar,
-.btn-reprovar,
-.btn-imprimir {
-  vertical-align: middle;
-}
+/* Mantém uma pista de cor rápida por tipo de ação (sem virar de novo
+   uma parede de botões coloridos: aqui é só a cor do texto). */
+.menu-acoes-dropdown .btn-editar { color: #b45309; }
+.menu-acoes-dropdown .btn-visualizar { color: #7c3aed; }
+.menu-acoes-dropdown .btn-aprovar { color: #16a34a; }
+.menu-acoes-dropdown .btn-reprovar { color: #4b5563; }
+.menu-acoes-dropdown .btn-excluir { color: #dc2626; }
 
 /* =========================================
    PAINEL (DASHBOARD)
