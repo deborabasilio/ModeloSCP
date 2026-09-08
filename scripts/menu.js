@@ -73,6 +73,7 @@ document.addEventListener("DOMContentLoaded", function () {
     categoria_produto: "categoriaprodutoid",
     produtos: "produtoid",
     orcamentos: "orcamentoid",
+    faturamentos: "faturamentoid",
   };
 
   const PAGINA_DA_TABELA = {
@@ -226,11 +227,16 @@ document.addEventListener("DOMContentLoaded", function () {
     data.forEach((linha) => {
       const idRegistro = linha[colunas[0]];
 
-      bodyHTML += `<tr data-id="${idRegistro}">`;
+      // Guardamos também o código do orçamento relacionado (só existe quando a
+      // tabela é "faturamentos"), para poder usar na hora de abrir a nota fiscal.
+      const idOrcamentoRelacionado =
+        nomeTabela === "faturamentos" ? linha["Orçamento"] : "";
+
+      bodyHTML += `<tr data-id="${idRegistro}" data-orc-id="${idOrcamentoRelacionado}">`;
       colunas.forEach((coluna) => {
         let valor = linha[coluna];
 
-        if (typeof valor === "object" && valor !== null) {
+        while (typeof valor === "object" && valor !== null) {
           valor = Object.values(valor)[0];
         }
 
@@ -292,15 +298,17 @@ document.addEventListener("DOMContentLoaded", function () {
           itensAcao +=
             '<button type="button" class="btn-editar">Editar</button>';
 
-          if (nomeTabela === "orcamentos") {
-            itensAcao +=
-              '<button type="button" class="btn-visualizar">Visualizar</button>';
+          if (nomeTabela === "faturamentos") {
+            itensAcao += `<button type="button" class="btn-nota-fiscal">Simular Nota Fiscal</button>`;
           }
         }
 
         if (nomeTabela === "orcamentos" && linha.Status === "PENDENTE") {
           itensAcao += `<button type="button" class="btn-aprovar">Aprovar</button>`;
           itensAcao += `<button type="button" class="btn-reprovar">Reprovar</button>`;
+        }
+        if (nomeTabela === "orcamentos" && linha.Status === "APROVADO") {
+          itensAcao += `<button type="button" class="btn-faturar">Faturar</button>`;
         }
       }
 
@@ -392,7 +400,14 @@ document.addEventListener("DOMContentLoaded", function () {
         linhaClicada.remove();
         return;
       }
-
+      if (botaoClicado.classList.contains("btn-faturar")) {
+        window.open(`faturamento.html?id=${idRegistro}`, "_blank");
+        return;
+      }
+      if (botaoClicado.classList.contains("btn-nota-fiscal")) {
+        window.open(`imprimir_nota_fiscal.html?id=${idRegistro}`, "_blank");
+        return;
+      }
       if (
         botaoClicado.classList.contains("btn-aprovar") ||
         botaoClicado.classList.contains("btn-reprovar")
@@ -491,6 +506,13 @@ document.addEventListener("DOMContentLoaded", function () {
     buscarDados("orcamentos", "Lista de Orçamentos", query);
   });
 
+  document.getElementById("pesq-faturamentos")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    const query =
+      "Código:faturamentoid, Orçamento:orcamentoid, Cliente:orcamentos(clientes(nome_cliente)), Data_do_Faturamento:dt_faturamento, Nota_Fiscal:nr_nota_fiscal, Forma_de_Pagamento:forma_pagamento, Valor_Faturado:vl_faturado";
+    buscarDados("faturamentos", "Lista de Faturamentos", query);
+  });
+
   document.getElementById("pesq-clientes")?.addEventListener("click", (e) => {
     e.preventDefault();
     const query =
@@ -539,7 +561,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const reprovados = orcamentos.filter(
       (o) => o.status_orcamento === "REPROVADO",
     );
-
+    const faturados = orcamentos.filter(
+      (o) => o.status_orcamento === "FATURADO",
+    );
+    atualizarContadorOrcamentos("qtd-faturados", faturados);
     atualizarContadorOrcamentos("qtd-aprovados", aprovados);
     atualizarContadorOrcamentos("qtd-pendentes", pendentes);
     atualizarContadorOrcamentos("qtd-reprovados", reprovados);

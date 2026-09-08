@@ -1,182 +1,152 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Orçamentos</title>
-    <link rel="stylesheet" href="styles/admin.css" />
-    <script>
-      const parametrosIniciais = new URLSearchParams(window.location.search);
-      if (parametrosIniciais.has("id")) {
-        if (parametrosIniciais.get("modo") === "editar") {
-          document.documentElement.classList.add("carregando-edicao");
-        } else {
-          document.documentElement.classList.add("modo-visualizacao");
-        }
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orçamentos</title>
+  <link rel="stylesheet" href="styles/admin.css" />
+  <script>
+    const parametrosIniciais = new URLSearchParams(window.location.search);
+    if (parametrosIniciais.has("id")) {
+      if (parametrosIniciais.get("modo") === "editar") {
+        document.documentElement.classList.add("carregando-edicao");
+      } else {
+        document.documentElement.classList.add("modo-visualizacao");
       }
-    </script>
-  </head>
-  <body>
-    <header class="page-header">
-      <h1 id="tituloPagina">Orçamentos</h1>
-      <p id="descricaoHeader">Acompanhe propostas comerciais.</p>
-    </header>
-    <div class="container">
-      <!-- ÁREA DE VISUALIZAÇÃO / APROVAÇÃO DE UM ORÇAMENTO JÁ EXISTENTE -->
-      <div id="areaVisualizacao" class="oculto">
-        <div class="empty-state caixa-visualizacao-orcamento">
-          <!-- Botão de impressão atualizado com descrição e sem emoji -->
-          <button type="button" id="btnImprimirVis" class="btn-imprimir-vis">
-            Imprimir Orçamento em PDF
-          </button>
+    }
+  </script>
+</head>
 
-          <p><strong>Orçamento nº:</strong> <span id="visCodigo"></span></p>
-          <p><strong>Cliente:</strong> <span id="visCliente"></span></p>
-          <p><strong>Data do Orçamento:</strong> <span id="visData"></span></p>
-          <p>
-            <strong>Data de Validade:</strong> <span id="visValidade"></span>
-          </p>
-          <p><strong>Status Atual:</strong> <span id="visStatus"></span></p>
-          <p><strong>Desconto Aplicado:</strong> <span id="visDesconto"></span></p>
+<body>
+  <header class="page-header">
+    <h1 id="tituloPagina">Orçamentos</h1>
+    <p id="descricaoHeader">Acompanhe propostas comerciais.</p>
+  </header>
+  <div class="container">
 
-          <table class="tabela-registros tabela-visualizacao-orcamento">
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>Qtde</th>
-                <th>Valor Unit.</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody id="visCorpoItens"></tbody>
-          </table>
+    <div id="areaVisualizacao" class="oculto">
+      <div class="empty-state caixa-visualizacao-orcamento">
+        <button type="button" id="btnImprimirVis" class="btn-imprimir-vis">
+        </button>
 
-          <p class="total-visualizacao-orcamento">
-            <strong>Valor Total do Orçamento:</strong> R$
-            <span id="visTotal"></span>
-          </p>
+        <p><strong>Orçamento nº:</strong> <span id="visCodigo"></span></p>
+        <p><strong>Cliente:</strong> <span id="visCliente"></span></p>
+        <p><strong>Data do Orçamento:</strong> <span id="visData"></span></p>
+        <p>
+          <strong>Data de Validade:</strong> <span id="visValidade"></span>
+        </p>
+        <p><strong>Status Atual:</strong> <span id="visStatus"></span></p>
+        <p><strong>Desconto Aplicado:</strong> <span id="visDesconto"></span></p>
 
-          <div class="acoes-visualizacao-orcamento">
-            <div id="visAcoesAprovacao">
-              <button
-                type="button"
-                id="btnAprovarOrcamento"
-                class="botao-secundario"
-              >
-                Aprovar Orçamento
-              </button>
-              <button
-                type="button"
-                id="btnReprovarOrcamento"
-                class="botao-secundario"
-              >
-                Reprovar Orçamento
-              </button>
-            </div>
-            <button
-              type="button"
-              id="botaoVoltarVis"
-            >
-              Voltar
+        <table class="tabela-registros tabela-visualizacao-orcamento">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Qtde</th>
+              <th>Valor Unit.</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="visCorpoItens"></tbody>
+        </table>
+
+        <p class="total-visualizacao-orcamento">
+          <strong>Valor Total do Orçamento:</strong> R$
+          <span id="visTotal"></span>
+        </p>
+
+        <div class="acoes-visualizacao-orcamento">
+          <div id="visAcoesAprovacao">
+            <button type="button" id="btnAprovarOrcamento" class="botao-secundario">
+              Aprovar Orçamento
+            </button>
+            <button type="button" id="btnReprovarOrcamento" class="botao-secundario">
+              Reprovar Orçamento
             </button>
           </div>
+          <button type="button" id="botaoVoltarVis">
+            Voltar
+          </button>
         </div>
       </div>
-
-      <form id="formOrcamento">
-        <label for="codigoOrcamento">Código do Orçamento:</label>
-        <input type="text" id="codigoOrcamento" readonly />
-
-        <label for="clienteSelec">Cliente selecionado:</label>
-        <input
-          type="text"
-          id="clienteSelec"
-          list="listaClientes"
-          placeholder="Digite para buscar o cliente..."
-          autocomplete="new-off-clientes"
-          required
-        />
-        <input type="hidden" id="clienteSelecId" />
-        <datalist id="listaClientes"></datalist>
-
-        <label for="dataOrcamento">Data do Orçamento:</label>
-        <input type="text" id="dataOrcamento" readonly required />
-
-        <label for="validadeOrcamento">Data de Validade:</label>
-        <input type="date" id="validadeOrcamento" required />
-
-        <h3>Itens do Orçamento</h3>
-
-        <label for="produtoOrc">Produto:</label>
-        <input
-          type="text"
-          id="produtoOrc"
-          list="listaProdutosOrc"
-          autocomplete="new-off-produtos"
-          placeholder="Digite para buscar o produto..."
-        />
-        <input type="hidden" id="produtoOrcId" />
-        <datalist id="listaProdutosOrc"></datalist>
-
-        <label for="descProdutoOrc">Descrição:</label>
-        <input type="text" id="descProdutoOrc" readonly />
-
-        <label for="qtdeProdutoOrc">Quantidade:</label>
-        <input type="number" id="qtdeProdutoOrc" min="1" value="1" />
-
-        <label for="valorUnitario">Valor Unitário:</label>
-        <input type="text" id="valorUnitario" readonly />
-
-        <label for="valorTotalItem">Valor Total do Item:</label>
-        <input type="text" id="valorTotalItem" readonly />
-
-        <button type="button" id="btnAdicionarItem" class="botao-secundario">
-          Adicionar Item
-        </button>
-
-        <div class="lista-itens-orcamento">
-          <table>
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>Qtde</th>
-                <th>Valor Unit.</th>
-                <th>Total</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="corpoListaItens"></tbody>
-          </table>
-        </div>
-
-        <label for="valorTotalOrcamento">Valor Total do Orçamento:</label>
-        <input type="text" id="valorTotalOrcamento" readonly value="R$ 0,00" />
-
-        <label for="descontoOrcamento">Desconto (%):</label>
-        <input
-          type="text"
-          id="descontoOrcamento"
-          inputmode="decimal"
-          placeholder="0"
-          value="0"
-        />
-
-        <label for="valorFinalOrcamento">Valor Total com Desconto:</label>
-        <input type="text" id="valorFinalOrcamento" readonly value="R$ 0,00" />
-
-        <button type="submit" id="botaoSalvarOrcamento">Salvar</button>
-        <button
-          type="button"
-          id="botaoVoltarForm"
-        >
-          Voltar
-        </button>
-      </form>
-
-      <p id="mensagem"></p>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="scripts/orcamentos.js"></script>
-  </body>
+    <form id="formOrcamento">
+      <label for="codigoOrcamento">Código do Orçamento:</label>
+      <input type="text" id="codigoOrcamento" readonly />
+
+      <label for="clienteSelec">Cliente selecionado:</label>
+      <input type="text" id="clienteSelec" list="listaClientes" placeholder="Digite para buscar o cliente..."
+        autocomplete="new-off-clientes" required />
+      <input type="hidden" id="clienteSelecId" />
+      <datalist id="listaClientes"></datalist>
+
+      <label for="dataOrcamento">Data do Orçamento:</label>
+      <input type="text" id="dataOrcamento" readonly required />
+
+      <label for="validadeOrcamento">Data de Validade:</label>
+      <input type="date" id="validadeOrcamento" required />
+
+      <h3>Itens do Orçamento</h3>
+
+      <label for="produtoOrc">Produto:</label>
+      <input type="text" id="produtoOrc" list="listaProdutosOrc" autocomplete="new-off-produtos"
+        placeholder="Digite para buscar o produto..." />
+      <input type="hidden" id="produtoOrcId" />
+      <datalist id="listaProdutosOrc"></datalist>
+
+      <label for="descProdutoOrc">Descrição:</label>
+      <input type="text" id="descProdutoOrc" readonly />
+
+      <label for="qtdeProdutoOrc">Quantidade:</label>
+      <input type="number" id="qtdeProdutoOrc" min="1" value="1" />
+
+      <label for="valorUnitario">Valor Unitário:</label>
+      <input type="text" id="valorUnitario" readonly />
+
+      <label for="valorTotalItem">Valor Total do Item:</label>
+      <input type="text" id="valorTotalItem" readonly />
+
+      <button type="button" id="btnAdicionarItem" class="botao-secundario">
+        Adicionar Item
+      </button>
+
+      <div class="lista-itens-orcamento">
+        <table>
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Qtde</th>
+              <th>Valor Unit.</th>
+              <th>Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="corpoListaItens"></tbody>
+        </table>
+      </div>
+
+      <label for="valorTotalOrcamento">Valor Total do Orçamento:</label>
+      <input type="text" id="valorTotalOrcamento" readonly value="R$ 0,00" />
+
+      <label for="descontoOrcamento">Desconto (%):</label>
+      <input type="text" id="descontoOrcamento" inputmode="decimal" placeholder="0" value="0" />
+
+      <label for="valorFinalOrcamento">Valor Total com Desconto:</label>
+      <input type="text" id="valorFinalOrcamento" readonly value="R$ 0,00" />
+
+      <button type="submit" id="botaoSalvarOrcamento">Salvar</button>
+      <button type="button" id="botaoVoltarForm">
+        Voltar
+      </button>
+    </form>
+
+    <p id="mensagem"></p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="scripts/orcamentos.js"></script>
+</body>
+
 </html>

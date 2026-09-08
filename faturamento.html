@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faturar Orçamento</title>
+  <link rel="stylesheet" href="styles/admin.css">
+</head>
+
+<body>
+
+  <header class="page-header">
+    <h1 id="tituloPagina">Faturar Orçamento</h1>
+    <p id="descricaoPagina">Confirme os dados para gerar o faturamento.</p>
+  </header>
+
+  <form id="formFaturamento">
+
+    <label for="codigoOrcamentoFat">Orçamento nº:</label>
+    <input type="text" id="codigoOrcamentoFat" readonly />
+
+    <label for="clienteFat">Cliente:</label>
+    <input type="text" id="clienteFat" readonly />
+
+    <label for="valorFat">Valor do Orçamento:</label>
+    <input type="text" id="valorFat" readonly />
+
+    <label for="dataFat">Data do Faturamento:</label>
+    <input type="text" id="dataFat" readonly />
+
+    <label for="notaFiscalFat">Número da Nota Fiscal:</label>
+    <input type="text" id="notaFiscalFat" placeholder="Opcional">
+
+    <label for="formaPagamentoFat">Forma de Pagamento:</label>
+    <select id="formaPagamentoFat" required>
+      <option value="">Selecione</option>
+      <option value="DINHEIRO">Dinheiro</option>
+      <option value="PIX">PIX</option>
+      <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+      <option value="CARTAO_DEBITO">Cartão de Débito</option>
+      <option value="BOLETO">Boleto</option>
+    </select>
+
+    <label for="obsFat">Observação:</label>
+    <textarea id="obsFat"></textarea>
+
+    <button type="submit" id="botao">Confirmar Faturamento</button>
+    <button type="button" id="botaoVoltarForm">Voltar</button>
+
+  </form>
+
+  <p id="mensagem"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="scripts/faturamento.js"></script>
+
+</body>
+
+</html>

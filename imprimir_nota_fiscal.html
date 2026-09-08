@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nota Fiscal Simulada</title>
+  <link rel="stylesheet" href="styles/imprimir_orcamento.css">
+</head>
+<body>
+
+  <!-- Botões de Controle (Ocultos na Impressão) -->
+  <div class="controles-tela">
+    <button class="btn btn-imprimir" onclick="window.print()">Imprimir Novamente</button>
+    <button class="btn btn-fechar" onclick="window.close()">Fechar Guia</button>
+  </div>
+
+  <div class="folha-a4">
+    <!-- AVISO DE DOCUMENTO SIMULADO (some na impressão, veja o CSS abaixo) -->
+    <div class="aviso-simulacao">
+      DOCUMENTO SIMULADO — SEM VALOR FISCAL — USO EXCLUSIVO PARA ESTUDO
+    </div>
+
+    <!-- CABEÇALHO -->
+    <div class="cabecalho-empresa">
+      <div>
+        <h1>GIRO PNEUS</h1>
+        <p>Comércio de Pneus e Serviços. CNPJ: 12.923.293/0002-23</p>
+      </div>
+      <div class="info-doc">
+        <h2>NOTA FISCAL SIMULADA</h2>
+        <p>Nº <strong id="doc-numero">Carregando...</strong></p>
+      </div>
+    </div>
+
+    <!-- DADOS DO CLIENTE E FATURAMENTO -->
+    <div class="sessao-dados">
+      <div class="bloco-dados">
+        <h3>Dados do Cliente</h3>
+        <strong>Nome:</strong> <span id="doc-cliente"></span><br>
+        <strong>CPF/CNPJ:</strong> <span id="doc-cpf"></span>
+      </div>
+
+      <div class="bloco-dados">
+        <h3>Detalhes do Faturamento</h3>
+        <strong>Orçamento nº:</strong> <span id="doc-orcamento"></span><br>
+        <strong>Data de Emissão:</strong> <span id="doc-data"></span><br>
+        <strong>Forma de Pagamento:</strong> <span id="doc-pagamento"></span><br>
+        <strong>Nota Fiscal nº:</strong> <span id="doc-notafiscal"></span>
+      </div>
+    </div>
+
+    <!-- TABELA DE ITENS -->
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Qtde</th>
+          <th class="num">Valor Unitário</th>
+          <th class="num">Total do Item</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-itens-corpo">
+        <tr><td colspan="4">Buscando itens...</td></tr>
+      </tbody>
+    </table>
+
+    <!-- TOTAL -->
+    <div class="bloco-total">
+      Valor Total Faturado:<br>
+      <span id="doc-total">R$ 0,00</span>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="scripts/imprimir_nota_fiscal.js"></script>
+</body>
+</html>

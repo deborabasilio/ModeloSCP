@@ -117,7 +117,7 @@ body {
 /* =========================================
    Empurra o Sair para a direita
    ========================================= */
-.menu-principal > ul > li:last-child {
+.menu-principal>ul>li:last-child {
   margin-left: auto;
 }
 
@@ -223,6 +223,7 @@ body {
   .barra-filtro {
     flex-wrap: wrap;
   }
+
   .barra-filtro #filtro-coluna,
   .barra-filtro #filtro-condicao,
   .barra-filtro #filtro-valor {
@@ -334,17 +335,32 @@ body {
 
 /* Mantém uma pista de cor rápida por tipo de ação (sem virar de novo
    uma parede de botões coloridos: aqui é só a cor do texto). */
-.menu-acoes-dropdown .btn-editar { color: #b45309; }
-.menu-acoes-dropdown .btn-visualizar { color: #7c3aed; }
-.menu-acoes-dropdown .btn-aprovar { color: #16a34a; }
-.menu-acoes-dropdown .btn-reprovar { color: #4b5563; }
-.menu-acoes-dropdown .btn-excluir { color: #dc2626; }
+.menu-acoes-dropdown .btn-editar {
+  color: #b45309;
+}
+
+.menu-acoes-dropdown .btn-visualizar {
+  color: #7c3aed;
+}
+
+.menu-acoes-dropdown .btn-aprovar {
+  color: #16a34a;
+}
+
+.menu-acoes-dropdown .btn-reprovar {
+  color: #4b5563;
+}
+
+.menu-acoes-dropdown .btn-excluir {
+  color: #dc2626;
+}
 
 /* =========================================
    PAINEL (DASHBOARD)
    ========================================= */
 .painel-grid {
-  display: grid; /* Volta a usar o formato de grade adaptável */
+  display: grid;
+  /* Volta a usar o formato de grade adaptável */
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
 }
@@ -354,17 +370,17 @@ body {
   border-radius: var(--radius);
   padding: 20px;
   color: var(--text);
-  
+
   /* Altura mínima para deixar os retângulos um pouco mais altos que antes */
   min-height: 140px;
-  
+
   /* Centraliza o conteúdo no meio do retângulo */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-  
+
   /* Efeitos de clique */
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -382,9 +398,9 @@ body {
   line-height: 1.4;
 }
 
-/* =========================================
-   CORES DOS RETÂNGULOS (NÃO APAGUE)
-   ========================================= */
+/* ======================
+   CORES DOS RETÂNGULOS
+   ===================== */
 .painel-card.verde {
   background: #d4edda;
 }
@@ -395,6 +411,10 @@ body {
 
 .painel-card.vermelho {
   background: #f8d7da;
+}
+
+.painel-card.azul {
+  background: #d6e6fb;
 }
 
 /* =========================================

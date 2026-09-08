@@ -1,117 +1,131 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Menu Principal</title>
-    <link rel="stylesheet" href="styles/menu.css" />
-  </head>
-  <body>
-    <nav class="menu-principal">
-      <ul>
-        <li class="company-logo">
-          <img src="assets/logo-giro-pneus.jpg" alt="Giro Pneus" />
-        </li>
 
-        <!-- MENU PAINEL-->
-        <li>
-          <a href="#" class="dropbtn" id="btn-painel">Painel</a>
-        </li>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Menu Principal</title>
+  <link rel="stylesheet" href="styles/menu.css" />
+</head>
 
-        <!-- MENU CLIENTES -->
-        <li class="dropdown">
-          <a href="#" class="dropbtn" id="btn-clientes">Clientes</a>
-          <ul class="dropdown-content" id="dropdown-clientes">
-            <li>
-              <a href="cadastrocliente.html" target="_blank">Cadastrar</a>
-            </li>
-            <li><a href="#" id="pesq-clientes">Pesquisar</a></li>
-          </ul>
-        </li>
+<body>
+  <nav class="menu-principal">
+    <ul>
+      <li class="company-logo">
+        <img src="assets/logo-giro-pneus.jpg" alt="Giro Pneus" />
+      </li>
 
-        <!-- MENU CATEGORIAS -->
-        <li class="dropdown">
-          <a href="#" class="dropbtn" id="btn-categorias">Categorias</a>
-          <ul class="dropdown-content" id="dropdown-categorias">
-            <li>
-              <a href="categoriaprodutos.html" target="_blank">Cadastrar</a>
-            </li>
-            <li><a href="#" id="pesq-categorias">Pesquisar</a></li>
-          </ul>
-        </li>
+      <!-- MENU PAINEL-->
+      <li>
+        <a href="#" class="dropbtn" id="btn-painel">Painel</a>
+      </li>
 
-        <!-- MENU PRODUTOS -->
-        <li class="dropdown">
-          <a href="#" class="dropbtn" id="btn-produtos">Produtos</a>
-          <ul class="dropdown-content" id="dropdown-produtos">
-            <li><a href="produtos.html" target="_blank">Cadastrar</a></li>
-            <li><a href="#" id="pesq-produtos">Pesquisar</a></li>
-          </ul>
-        </li>
+      <!-- MENU CLIENTES -->
+      <li class="dropdown">
+        <a href="#" class="dropbtn" id="btn-clientes">Clientes</a>
+        <ul class="dropdown-content" id="dropdown-clientes">
+          <li>
+            <a href="cadastrocliente.html" target="_blank">Cadastrar</a>
+          </li>
+          <li><a href="#" id="pesq-clientes">Pesquisar</a></li>
+        </ul>
+      </li>
 
-        <!-- MENU ORÇAMENTOS -->
-        <li class="dropdown">
-          <a href="#" class="dropbtn" id="btn-orcamentos">Orçamentos</a>
-          <ul class="dropdown-content" id="dropdown-orcamentos">
-            <li><a href="orcamentos.html" target="_blank">Cadastrar</a></li>
-            <li><a href="#" id="pesq-orcamentos">Pesquisar</a></li>
-          </ul>
-        </li>
+      <!-- MENU CATEGORIAS -->
+      <li class="dropdown">
+        <a href="#" class="dropbtn" id="btn-categorias">Categorias</a>
+        <ul class="dropdown-content" id="dropdown-categorias">
+          <li>
+            <a href="categoriaprodutos.html" target="_blank">Cadastrar</a>
+          </li>
+          <li><a href="#" id="pesq-categorias">Pesquisar</a></li>
+        </ul>
+      </li>
 
-        <li><a class="logout" href="#" id="btn-sair">Sair</a></li>
-      </ul>
-    </nav>
+      <!-- MENU PRODUTOS -->
+      <li class="dropdown">
+        <a href="#" class="dropbtn" id="btn-produtos">Produtos</a>
+        <ul class="dropdown-content" id="dropdown-produtos">
+          <li><a href="produtos.html" target="_blank">Cadastrar</a></li>
+          <li><a href="#" id="pesq-produtos">Pesquisar</a></li>
+        </ul>
+      </li>
 
-    <!-- ÁREA DO PAINEL-->
-    <main id="area-painel" class="conteudo-pagina">
-      <h2>Painel de Atendimento</h2>
-      <div class="painel-grid">
-        <div class="painel-card verde">
-          <h3>Orçamentos Aprovados (<span id="qtd-aprovados">0</span>)</h3>
-        </div>
-        <div class="painel-card amarelo">
-          <h3>Orçamentos Pendentes (<span id="qtd-pendentes">0</span>)</h3>
-        </div>
-        <div class="painel-card vermelho">
-          <h3>Orçamentos Reprovados (<span id="qtd-reprovados">0</span>)</h3>
-        </div>
+      <!-- MENU ORÇAMENTOS -->
+      <li class="dropdown">
+        <a href="#" class="dropbtn" id="btn-orcamentos">Orçamentos</a>
+        <ul class="dropdown-content" id="dropdown-orcamentos">
+          <li><a href="orcamentos.html" target="_blank">Cadastrar</a></li>
+          <li><a href="#" id="pesq-orcamentos">Pesquisar</a></li>
+        </ul>
+      </li>
+
+      <!-- MENU FATURAMENTO -->
+      <li class="dropdown">
+        <a href="#" class="dropbtn" id="btn-faturamento">Faturamentos</a>
+        <ul class="dropdown-content" id="dropdown-faturamento">
+          <li><a href="#" id="pesq-faturamentos">Pesquisar</a></li>
+        </ul>
+      </li>
+
+      <li><a class="logout" href="#" id="btn-sair">Sair</a></li>
+    </ul>
+  </nav>
+
+  <!-- ÁREA DO PAINEL-->
+  <main id="area-painel" class="conteudo-pagina">
+    <h2>Painel de Atendimento</h2>
+    <div class="painel-grid">
+      <div class="painel-card verde">
+        <h3>Orçamentos Aprovados (<span id="qtd-aprovados">0</span>)</h3>
       </div>
-    </main>
-
-    <!-- ÁREA DE PESQUISA (Usada para todas as tabelas) -->
-    <main id="area-pesquisa" class="conteudo-pagina">
-      <div class="cabecalho-pesquisa">
-        <h2 id="titulo-pesquisa">Pesquisa</h2>
-
-        <div class="barra-filtro">
-          <label for="filtro-coluna">Filtrar por:</label>
-          <select id="filtro-coluna">
-            <option value="">Selecione...</option>
-          </select>
-
-          <select id="filtro-condicao">
-            <option value="contem">Contém</option>
-            <option value="igual">Igual a</option>
-          </select>
-
-          <input type="text" id="filtro-valor" placeholder="Valor..." />
-          <button type="button" class="btn-buscar" id="btn-filtrar">
-            Pesquisar
-          </button>
-        </div>
+      <div class="painel-card amarelo">
+        <h3>Orçamentos Pendentes (<span id="qtd-pendentes">0</span>)</h3>
       </div>
+      <div class="painel-card vermelho">
+        <h3>Orçamentos Reprovados (<span id="qtd-reprovados">0</span>)</h3>
+      </div>
+      <div class="painel-card azul">
+        <h3>Orçamentos Faturados (<span id="qtd-faturados">0</span>)</h3>
+      </div>
+    </div>
+  </main>
 
-      <table class="tabela-clientes">
-        <thead id="tabela-cabecalho">
-          <!-- O JavaScript vai preencher os títulos das colunas aqui -->
-        </thead>
-        <tbody id="tabela-corpo">
-          <!-- O JavaScript vai preencher os dados do Supabase aqui -->
-        </tbody>
-      </table>
-    </main>
+  <!-- ÁREA DE PESQUISA (Usada para todas as tabelas) -->
+  <main id="area-pesquisa" class="conteudo-pagina">
+    <div class="cabecalho-pesquisa">
+      <h2 id="titulo-pesquisa">Pesquisa</h2>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="scripts/menu.js"></script>
-  </body>
+      <div class="barra-filtro">
+        <label for="filtro-coluna">Filtrar por:</label>
+        <select id="filtro-coluna">
+          <option value="">Selecione...</option>
+        </select>
+
+        <select id="filtro-condicao">
+          <option value="contem">Contém</option>
+          <option value="igual">Igual a</option>
+        </select>
+
+        <input type="text" id="filtro-valor" placeholder="Valor..." />
+        <button type="button" class="btn-buscar" id="btn-filtrar">
+          Pesquisar
+        </button>
+      </div>
+    </div>
+
+    <table class="tabela-clientes">
+      <thead id="tabela-cabecalho">
+        <!-- O JavaScript vai preencher os títulos das colunas aqui -->
+      </thead>
+      <tbody id="tabela-corpo">
+        <!-- O JavaScript vai preencher os dados do Supabase aqui -->
+      </tbody>
+    </table>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="scripts/menu.js"></script>
+</body>
+
 </html>

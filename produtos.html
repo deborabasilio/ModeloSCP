@@ -1,25 +1,32 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Produtos</title>
     <link rel="stylesheet" href="styles/admin.css">
     <script>
-      if (new URLSearchParams(window.location.search).has("id")) {
-        document.documentElement.classList.add("carregando-edicao");
-      }
+        if (new URLSearchParams(window.location.search).has("id")) {
+            document.documentElement.classList.add("carregando-edicao");
+        }
     </script>
 </head>
+
 <body>
-    <header class="page-header"><h1 id="tituloPagina">Produtos</h1><p id="descricaoPagina">Cadastre e mantenha o catálogo comercial.</p></header>
+    <header class="page-header">
+        <h1 id="tituloPagina">Produtos</h1>
+        <p id="descricaoPagina">
+            Cadastre e mantenha o catálogo comercial.</p>
+    </header>
     <div class="produtos">
         <form id="formProdutos">
-            <label for="idProd">Código do Produto:</label><!--aqui deve mostar o codigo que vai gerar no banco desse produto-->
+            <label for="idProd">Código do Produto:</label>
             <input type="text" id="idProd" readonly>
 
             <label for="catProd">Categoria do Produto:</label>
-            <input type="text" id="catProd" list="listaCategorias" placeholder="Digite para buscar a categoria..." autocomplete="new-off-clientes" required>
+            <input type="text" id="catProd" list="listaCategorias" placeholder="Digite para buscar a categoria..."
+                autocomplete="new-off-clientes" required>
             <input type="hidden" id="catProdId">
             <datalist id="listaCategorias"></datalist>
 
@@ -35,7 +42,8 @@
             <label for="qtdEstoqueProd">Quantidade em Estoque:</label>
             <input type="number" id="qtdEstoqueProd" min="0" value="0" required>
 
-            <label for="dataCadastroProd">Data de cadastro:</label><!--gerar automaticamente com data e horario que finalizar-->
+            <label for="dataCadastroProd">Data de
+                cadastro:</label><!--gerar automaticamente com data e horario que finalizar-->
             <input type="text" id="dataCadastroProd" required readonly>
 
             <label for="statusProd">Status do Produto:</label>
@@ -50,14 +58,8 @@
 
         <p id="mensagem"></p>
 
-     <!--Não salvar sem categoria. 
-     • Não salvar sem descrição. 
-     • Não salvar sem valor de venda. 
-     • Não salvar sem status. 
-     • Editar deve carregar dados no
-formulário. 
-Na listagem, exibir botões Editar e excluir -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="scripts/produtos.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="scripts/produtos.js"></script>
 </body>
+
 </html>

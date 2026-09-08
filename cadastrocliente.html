@@ -1,14 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-  <!-- Define a codificação da página para aceitar acentos -->
   <meta charset="UTF-8">
-
-  <!-- Faz a página se adaptar melhor em celulares e computadores -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Título que aparece na aba do navegador -->
-  <title>MVP - Cadastro de Cliente</title>
+  <title>Cadastro de Cliente</title>
   <link rel="stylesheet" href="styles/admin.css">
   <script>
     if (new URLSearchParams(window.location.search).has("id")) {
@@ -16,20 +12,18 @@
     }
   </script>
 </head>
+
 <body>
 
-  <!-- Título principal da página -->
-  <header class="page-header"><h1 id="tituloPagina">Cadastro de Cliente</h1><p id="descricaoPagina">Inclua clientes para utilização nos orçamentos.</p></header>
+  <header class="page-header">
+    <h1 id="tituloPagina">Cadastro de Cliente</h1>
+    <p id="descricaoPagina">Inclua clientes para utilização nos orçamentos.</p>
+  </header>
 
-  <!-- 
-    Formulário de cadastro de cliente.
-    O ID "formCliente" será usado no JavaScript para capturar o envio.
-  -->
   <form id="formCliente">
 
-    <label for="codigoCliente">Código do Cliente:</label
-        ><!--gera automaticamente buscando no banco-->
-        <input type="text" id="codigoCliente" readonly />
+    <label for="codigoCliente">Código do Cliente:</label>
+    <input type="text" id="codigoCliente" readonly />
 
     <label for="tipoCliente">Tipo de Cliente:</label>
     <select id="tipoCliente" required>
@@ -38,56 +32,25 @@
       <option value="J">Jurídico</option>
     </select>
 
-    
 
-    <!-- 
-      Campo CPF_CNPJ_CLIENTE.
-      No banco é VARCHAR(18), então limitamos a 18 caracteres.
-    -->
     <label for="cpfCnpjCliente">CPF / CNPJ:</label>
-    <input
-      type="text"
-      id="cpfCnpjCliente"
-      maxlength="18"
-      required
-    >
+    <input type="text" id="cpfCnpjCliente" maxlength="18" required>
 
-    
 
-    <!-- 
-      Campo NOME_CLIENTE.
-      No banco é VARCHAR(100), então limitamos a 100 caracteres.
-    -->
     <label for="nomeCliente">Nome do Cliente:</label>
-    <input
-      type="text"
-      id="nomeCliente"
-      maxlength="100"
-      required
-    >
+    <input type="text" id="nomeCliente" maxlength="100" required>
 
-    
 
-    <!-- Botão que envia o formulário -->
     <button type="submit" id="botao">Salvar</button>
     <button type="button" id="botaoVoltarForm">Voltar</button>
 
   </form>
 
-  <!-- 
-    Área onde vamos mostrar mensagens para o usuário,
-    como sucesso ou erro.
-  -->
   <p id="mensagem"></p>
 
-  <!-- 
-    Biblioteca JavaScript do Supabase.
-    Ela precisa vir antes do app.js, porque o app.js usa o Supabase.
-  -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Nosso arquivo JavaScript separado -->
   <script src="scripts/cadastrocliente.js"></script>
 
 </body>
+
 </html>
