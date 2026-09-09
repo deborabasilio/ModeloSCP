@@ -126,16 +126,8 @@ document.addEventListener("DOMContentLoaded", function () {
         nomeColunaReal = nomeColunaReal.replace(/\(/g, ".").replace(/\)/g, "");
       }
 
-      // Pega só o nome real da coluna (sem o prefixo "tabela." de colunas
-      // vindas de relacionamentos, tipo "clientes.nome_cliente"), para
-      // decidir o TIPO do dado que estamos filtrando.
       const nomeColunaSimples = nomeColunaReal.split(".").pop();
 
-      // IMPORTANTE: antes essa checagem usava "includes('id')", o que
-      // detectava errado colunas como "dt_validade_orcamento" (a palavra
-      // "valID Ade" contém "id" no meio) e tratava datas como se fossem
-      // código numérico. Agora só considera código quando o nome da
-      // coluna termina em "id" de verdade (produtoid, clienteid, etc.).
       const ehCodigo = /id$/i.test(nomeColunaSimples);
       const ehValorMonetario = nomeColunaSimples.startsWith("vl_");
       const ehData = nomeColunaSimples.startsWith("dt_");
@@ -143,16 +135,11 @@ document.addEventListener("DOMContentLoaded", function () {
       const valorDigitado = String(filtro.valor).trim();
 
       if (ehCodigo) {
-        // Código: sempre comparação exata, extraindo só os números
-        // digitados (o usuário pode digitar "5" ou "#5", por exemplo).
         const numero = Number(valorDigitado.replace(/\D/g, ""));
         if (!isNaN(numero)) {
           requisicao = requisicao.eq(nomeColunaReal, numero);
         }
       } else if (ehValorMonetario) {
-        // Valor monetário: o campo aparece formatado na tela como
-        // "1.234,56", mas no banco é um número puro (1234.56). Aceita o
-        // que o usuário digitar em qualquer um dos dois formatos.
         const somenteNumero = valorDigitado.replace(/[^\d,.-]/g, "");
         const numero = Number(
           somenteNumero.includes(",")
@@ -163,12 +150,6 @@ document.addEventListener("DOMContentLoaded", function () {
           requisicao = requisicao.eq(nomeColunaReal, numero);
         }
       } else if (ehData) {
-        // Data: o campo aparece formatado na tela como "dd/mm/aaaa", mas
-        // no banco é um timestamp completo (aaaa-mm-ddTHH:MM:SS). Como o
-        // Postgres não permite "ilike" direto num timestamp, fazemos um
-        // cast para texto (":: text") e comparamos pelo início da data no
-        // formato do banco, aceitando o que o usuário digitar em
-        // dd/mm/aaaa ou já no formato aaaa-mm-dd.
         const partesBr = valorDigitado.match(
           /^(\d{2})\/(\d{2})\/(\d{4})$/,
         );
@@ -178,7 +159,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         requisicao = requisicao.ilike(`${nomeColunaReal}::text`, `${dataBusca}%`);
       } else {
-        // Texto comum (nome, descrição, etc.)
         if (filtro.condicao === "contem") {
           requisicao = requisicao.ilike(nomeColunaReal, `%${valorDigitado}%`);
         } else {
@@ -259,8 +239,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (coluna.toLowerCase().includes("data") && valor) {
           const dataObj = new Date(valor);
           if (!isNaN(dataObj.getTime())) {
-            // Se o alias indicar "orçamento" (tem hora), mostra data + hora.
-            // Os demais (validade, cadastro) mostram só a data.
             valor =
               coluna === "Data_do_Orçamento"
                 ? dataObj.toLocaleString("pt-BR")
@@ -286,11 +264,6 @@ document.addEventListener("DOMContentLoaded", function () {
         bodyHTML += `<td>${valor || ""}</td>`;
       });
 
-      // Monta os itens de ação (mesmas classes de sempre: btn-editar,
-      // btn-visualizar, btn-aprovar, btn-reprovar, btn-excluir). A lógica
-      // de clique de cada uma continua igual lá embaixo — só a aparência
-      // muda: em vez de um botão colorido solto por ação, elas agora
-      // ficam dentro de um menu suspenso, aberto por um único botão "⋮".
       let itensAcao = "";
 
       if (usuarioPodeEditar) {
@@ -336,8 +309,6 @@ document.addEventListener("DOMContentLoaded", function () {
     ?.addEventListener("click", async function (evento) {
       const botaoClicado = evento.target;
 
-      // Abre/fecha o menu de ações (⋮) da linha clicada, fechando
-      // qualquer outro menu de ações que esteja aberto em outra linha.
       if (botaoClicado.classList.contains("btn-menu-acoes")) {
         const dropdownAtual = botaoClicado.nextElementSibling;
 
@@ -356,7 +327,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const idRegistro = linhaClicada.dataset.id;
 
-      // Qualquer ação escolhida dentro do menu já fecha o próprio menu.
       botaoClicado
         .closest(".menu-acoes-dropdown")
         ?.classList.remove("mostrar-menu-acoes");
@@ -367,10 +337,6 @@ document.addEventListener("DOMContentLoaded", function () {
       ) {
         const pagina = PAGINA_DA_TABELA[tabelaAtual];
         if (pagina) {
-          // Em orçamentos, "Editar" e "Visualizar" apontam para a mesma
-          // página, mas precisam abrir modos diferentes: o parâmetro
-          // "modo=editar" avisa orcamentos.js para carregar o formulário
-          // editável em vez da tela somente-leitura.
           const ehBotaoEditar = botaoClicado.classList.contains("btn-editar");
           const sufixoModo =
             tabelaAtual === "orcamentos" && ehBotaoEditar ? "&modo=editar" : "";
@@ -414,7 +380,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (erroReverterStatus) {
               alert(
                 "Faturamento excluído, mas houve um erro ao devolver o orçamento para o status APROVADO: " +
-                erroReverterStatus.message,
+                  erroReverterStatus.message,
               );
               console.error(erroReverterStatus);
             }
@@ -447,6 +413,37 @@ document.addEventListener("DOMContentLoaded", function () {
             .eq("orcamentoid", idRegistro);
 
           if (itens) {
+            // ALTERAÇÃO (item 3): mesma checagem de estoque insuficiente
+            // que foi feita em orcamentos.js, agora também aqui, já que
+            // esse é o outro lugar do sistema onde dá para aprovar um
+            // orçamento (a partir da listagem do menu).
+            const produtosComEstoqueInsuficiente = [];
+
+            for (let item of itens) {
+              const { data: produto } = await window.supabaseClient
+                .from("produtos")
+                .select("ds_produto, qt_estoque_produto")
+                .eq("produtoid", item.produtoid)
+                .single();
+
+              if (
+                produto &&
+                produto.qt_estoque_produto - item.qt_produto < 0
+              ) {
+                produtosComEstoqueInsuficiente.push(
+                  `${produto.ds_produto} (estoque atual: ${produto.qt_estoque_produto}, necessário: ${item.qt_produto})`,
+                );
+              }
+            }
+
+            if (produtosComEstoqueInsuficiente.length > 0) {
+              alert(
+                "Não é possível aprovar: estoque insuficiente para: " +
+                  produtosComEstoqueInsuficiente.join("; "),
+              );
+              return;
+            }
+
             for (let item of itens) {
               const { data: produto } = await window.supabaseClient
                 .from("produtos")

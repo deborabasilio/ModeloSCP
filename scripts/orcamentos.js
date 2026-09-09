@@ -55,13 +55,6 @@ let itensDoOrcamento = [];
 let idOrcamentoEmEdicao = null;
 const botaoSalvarOrcamento = document.getElementById("botaoSalvarOrcamento");
 
-// Controla se os botões de Aprovar/Reprovar continuam disponíveis mesmo
-// depois que o orçamento já foi finalizado (aprovado ou reprovado). Isso
-// só é liberado quando o usuário chega até aqui pelo "Editar" na listagem;
-// quem só clicou em "Visualizar" continua vendo os botões apenas enquanto
-// o orçamento está PENDENTE.
-let permitirAlterarStatusFinalizado = false;
-
 const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
 
 if (!usuarioLogadoTexto) {
@@ -342,7 +335,17 @@ formOrcamento.addEventListener("submit", async function (evento) {
     mensagem.className = "erro";
     return;
   }
-  
+
+  // ALTERAÇÃO (item 4): não deixa salvar um orçamento sem nenhum item.
+  // Sem essa checagem, dava para clicar em "Salvar" com a lista de itens
+  // vazia e o orçamento era criado com valor total R$ 0,00, o que não
+  // faz sentido comercialmente.
+  if (itensDoOrcamento.length === 0) {
+    mensagem.textContent =
+      "Adicione pelo menos um item ao orçamento antes de salvar.";
+    mensagem.className = "erro";
+    return;
+  }
 
   const valorTotalOrcamento = itensDoOrcamento.reduce(
     (soma, item) => soma + item.valor_total_item,
@@ -494,37 +497,7 @@ formOrcamento.addEventListener("submit", async function (evento) {
   }, 5000);
 });
 
-// Mostra/esconde os botões de Aprovar e Reprovar de acordo com o status
-// atual do orçamento. Quando o orçamento está PENDENTE, mostra os dois.
-// Quando já foi finalizado (aprovado ou reprovado), só mostra os botões
-// se "permitirAlterarStatusFinalizado" estiver ligado (chegou aqui pelo
-// "Editar" — ver carregarOrcamentoParaEdicao) — e, nesse caso, mostra só
-// o botão da ação oposta à atual, para não repetir a mesma ação (e assim
-// dar baixa em estoque duas vezes, por exemplo).
-function atualizarBotoesAprovacao(status) {
-  if (status === "PENDENTE") {
-    visAcoesAprovacao.classList.remove("oculto");
-    btnAprovarOrcamento.classList.remove("oculto");
-    btnReprovarOrcamento.classList.remove("oculto");
-    return;
-  }
-
-  if (!permitirAlterarStatusFinalizado) {
-    visAcoesAprovacao.classList.add("oculto");
-    return;
-  }
-
-  visAcoesAprovacao.classList.remove("oculto");
-  btnAprovarOrcamento.classList.toggle("oculto", status === "APROVADO");
-  btnReprovarOrcamento.classList.toggle("oculto", status === "REPROVADO");
-}
-
-async function carregarOrcamentoParaVisualizacao(
-  idOrcamento,
-  permitirAlterarFinalizado = false,
-) {
-  permitirAlterarStatusFinalizado = permitirAlterarFinalizado;
-
+async function carregarOrcamentoParaVisualizacao(idOrcamento) {
   const { data: orcamento, error } = await supabaseClient
     .from(TABELA_ORCAMENTO)
     .select(
@@ -571,8 +544,8 @@ async function carregarOrcamentoParaVisualizacao(
     itens.length === 0
       ? '<tr><td colspan="4">Nenhum item encontrado.</td></tr>'
       : itens
-          .map(
-            (item) => `
+        .map(
+          (item) => `
         <tr>
           <td>${item.produtos?.ds_produto ?? ""}</td>
           <td>${item.qt_produto}</td>
@@ -580,10 +553,14 @@ async function carregarOrcamentoParaVisualizacao(
           <td>R$ ${formatarMoeda(item.vl_total)}</td>
         </tr>
       `,
-          )
-          .join("");
+        )
+        .join("");
 
-  atualizarBotoesAprovacao(orcamento.status_orcamento);
+  if (orcamento.status_orcamento === "PENDENTE") {
+    visAcoesAprovacao.classList.remove("oculto");
+  } else {
+    visAcoesAprovacao.classList.add("oculto");
+  }
 }
 
 async function carregarOrcamentoParaEdicao(idOrcamento) {
@@ -615,18 +592,14 @@ async function carregarOrcamentoParaEdicao(idOrcamento) {
     return;
   }
 
-  // Só faz sentido editar os ITENS de orçamentos ainda pendentes: um
-  // orçamento já aprovado já baixou estoque, e um reprovado já foi
-  // encerrado. Nesses casos abrimos direto em modo de visualização (sem
-  // pop-up bloqueando a tela), com os botões de Aprovar/Reprovar
-  // liberados para o usuário poder corrigir o status caso ele tenha sido
-  // definido por engano.
+  // Só faz sentido editar orçamentos ainda pendentes: um orçamento já
+  // finalizado já baixou estoque, e um reprovado já foi encerrado.
   if (orcamento.status_orcamento !== "PENDENTE") {
+    alert(
+      "Somente orçamentos com status PENDENTE podem ser editados. Abrindo em modo de visualização.",
+    );
     document.documentElement.classList.remove("carregando-edicao");
-    await carregarOrcamentoParaVisualizacao(idOrcamento, true);
-
-    mensagem.textContent = `Este orçamento já está ${orcamento.status_orcamento}. Somente os itens de orçamentos PENDENTES podem ser editados, mas você pode alterar o status abaixo, se necessário.`;
-    mensagem.className = "";
+    carregarOrcamentoParaVisualizacao(idOrcamento);
     return;
   }
 
@@ -684,69 +657,24 @@ async function carregarOrcamentoParaEdicao(idOrcamento) {
 }
 
 async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
-  // Guarda o status que estava em tela antes desta ação — é o que decide
-  // se precisamos baixar ou devolver estoque (ex.: reprovar um orçamento
-  // que já estava APROVADO deve devolver ao estoque o que foi baixado).
-  const statusAnterior = visStatus.textContent;
+  if (novoStatus === "APROVADO") {
+    // ALTERAÇÃO (itens 3 e 6): a checagem de estoque e a baixa agora
+    // vêm de uma função compartilhada, em scripts/estoque.js.
+    const resultado = await processarAprovacaoDeOrcamento(
+      supabaseClient,
+      idOrcamento,
+    );
 
-  // Só baixa o estoque se ainda não estava aprovado, evitando baixa dupla
-  // caso a função seja chamada com o orçamento já aprovado.
-  if (novoStatus === "APROVADO" && statusAnterior !== "APROVADO") {
-    const { data: itens } = await supabaseClient
-      .from("orcamento_item")
-      .select("produtoid, qt_produto")
-      .eq("orcamentoid", idOrcamento);
-
-    if (itens) {
-      for (let item of itens) {
-        const { data: produto } = await supabaseClient
-          .from(TABELA_PRODUTOS)
-          .select("qt_estoque_produto")
-          .eq("produtoid", item.produtoid)
-          .single();
-
-        if (produto && produto.qt_estoque_produto !== undefined) {
-          let novoEstoque = produto.qt_estoque_produto - item.qt_produto;
-
-          await supabaseClient
-            .from(TABELA_PRODUTOS)
-            .update({ qt_estoque_produto: novoEstoque })
-            .eq("produtoid", item.produtoid);
-        }
-      }
-    }
-  }
-
-  // Se o orçamento estava APROVADO e agora está sendo reprovado (correção
-  // de um status definido por engano), devolve ao estoque a quantidade
-  // que tinha sido baixada na aprovação anterior.
-  if (novoStatus === "REPROVADO" && statusAnterior === "APROVADO") {
-    const { data: itens } = await supabaseClient
-      .from("orcamento_item")
-      .select("produtoid, qt_produto")
-      .eq("orcamentoid", idOrcamento);
-
-    if (itens) {
-      for (let item of itens) {
-        const { data: produto } = await supabaseClient
-          .from(TABELA_PRODUTOS)
-          .select("qt_estoque_produto")
-          .eq("produtoid", item.produtoid)
-          .single();
-
-        if (produto && produto.qt_estoque_produto !== undefined) {
-          let novoEstoque = produto.qt_estoque_produto + item.qt_produto;
-
-          await supabaseClient
-            .from(TABELA_PRODUTOS)
-            .update({ qt_estoque_produto: novoEstoque })
-            .eq("produtoid", item.produtoid);
-        }
-      }
+    if (!resultado.sucesso) {
+      mensagem.textContent = resultado.mensagem;
+      mensagem.className = "erro";
+      return;
     }
   }
 
   const { error } = await supabaseClient
+
+
     .from(TABELA_ORCAMENTO)
     .update({ status_orcamento: novoStatus })
     .eq("orcamentoid", idOrcamento);
@@ -762,13 +690,11 @@ async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
   mensagem.textContent =
     novoStatus === "APROVADO"
       ? "Orçamento aprovado e estoque atualizado com sucesso!"
-      : statusAnterior === "APROVADO"
-        ? "Orçamento reprovado e estoque devolvido com sucesso!"
-        : "Orçamento reprovado.";
+      : "Orçamento reprovado.";
   mensagem.className = "sucesso";
 
   visStatus.textContent = novoStatus;
-  atualizarBotoesAprovacao(novoStatus);
+  visAcoesAprovacao.classList.add("oculto");
 
   setTimeout(() => {
     mensagem.textContent = "";
@@ -825,17 +751,10 @@ document.addEventListener("DOMContentLoaded", function () {
   =====================================================
   BOTÕES VOLTAR: FECHAM A ABA EM VEZ DE NAVEGAR
   =====================================================
-  Como esta página é sempre aberta em uma nova aba (a partir do menu),
-  "Voltar" deve fechar a aba atual e devolver o usuário para a aba do
-  menu que já estava aberta, em vez de carregar menu.html aqui e ir
-  acumulando abas. Vale tanto para o botão do formulário quanto para o
-  botão da tela de visualização/aprovação.
 */
 function voltarFechandoAba() {
   window.close();
 
-  // Se o navegador não deixar fechar (ex.: a página foi aberta digitando
-  // a URL direto, e não por um link/script), caímos de volta para o menu.
   setTimeout(() => {
     window.location.href = "menu.html";
   }, 300);

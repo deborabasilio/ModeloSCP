@@ -3,6 +3,11 @@ const SUPABASE_URL = "https://whidvijhqmudgzyylbfo.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_MHgrDJpm8wa4mGTJWPR0sg_08Bc9dut";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
+if (!usuarioLogadoTexto) {
+  window.location.href = "login.html";
+}
+
 // Formatação de moeda
 function formatarMoeda(valor) {
   return Number(valor).toLocaleString("pt-BR", {
