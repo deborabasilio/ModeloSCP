@@ -4,7 +4,7 @@
   =====================================================
 */
 const formCliente = document.getElementById("formCliente");
-const codigoOrcamentoInput = document.getElementById("codigoCliente");
+const codigoClienteInput = document.getElementById("codigoCliente");
 const tipoClienteInput = document.getElementById("tipoCliente");
 const cpfCnpjClienteInput = document.getElementById("cpfCnpjCliente");
 const nomeClienteInput = document.getElementById("nomeCliente");
@@ -87,7 +87,7 @@ if (sessaoCliente) {
   =====================================================
 */
 async function buscarProximoCodigo() {
-  await mostrarProximoCodigoNoCampo("clientes", "clienteid", codigoOrcamentoInput);
+  await mostrarProximoCodigoNoCampo("clientes", "clienteid", codigoClienteInput);
 }
 
 /*
@@ -115,7 +115,7 @@ async function carregarClienteNoFormulario(idCliente) {
     return;
   }
 
-  codigoOrcamentoInput.value = cliente.clienteid;
+  codigoClienteInput.value = cliente.clienteid;
   tipoClienteInput.value = cliente.tipo_cliente;
 
   // O campo de CPF/CNPJ começa desabilitado (só libera quando o usuário

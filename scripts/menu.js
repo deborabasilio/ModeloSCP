@@ -596,6 +596,7 @@ document.addEventListener("DOMContentLoaded", function () {
     verde: "APROVADO",
     amarelo: "PENDENTE",
     vermelho: "REPROVADO",
+    azul: "FATURADO",
   };
 
   Object.keys(cardsPainel).forEach((cor) => {
