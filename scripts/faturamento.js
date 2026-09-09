@@ -1,8 +1,3 @@
-/*
-  =====================================================
-  PEGANDO OS ELEMENTOS DO HTML
-  =====================================================
-*/
 const formFaturamento = document.getElementById("formFaturamento");
 const codigoOrcamentoFatInput = document.getElementById("codigoOrcamentoFat");
 const clienteFatInput = document.getElementById("clienteFat");
@@ -12,22 +7,15 @@ const notaFiscalFatInput = document.getElementById("notaFiscalFat");
 const formaPagamentoFatSelect = document.getElementById("formaPagamentoFat");
 const obsFatInput = document.getElementById("obsFat");
 const mensagem = document.getElementById("mensagem");
+const botaoGerarNota = document.getElementById("botao");
 
-// =====================================================
-// PROTEÇÃO DE ROTA: só entra quem estiver logado
-// =====================================================
 const sessaoFaturamento = protegerRota();
+const idOrcamento = new URLSearchParams(window.location.search).get("id");
 
-// =====================================================
-// LÊ O "?id=" DA URL (o botão "Faturar" da listagem manda
-// o código do orçamento nessa URL)
-// =====================================================
-const parametrosUrl = new URLSearchParams(window.location.search);
-const idOrcamento = parametrosUrl.get("id");
-
-// Vamos guardar aqui o valor total do orçamento, assim que carregarmos
-// os dados dele, para usar depois no momento de salvar.
 let valorOrcamentoCarregado = 0;
+let orcamentoProntoParaFaturar = false;
+
+botaoGerarNota.disabled = true;
 
 if (!idOrcamento) {
   alert("Nenhum orçamento informado para faturamento.");
@@ -36,11 +24,48 @@ if (!idOrcamento) {
   carregarOrcamento(idOrcamento);
 }
 
-/*
-  =====================================================
-  BUSCA OS DADOS DO ORÇAMENTO NO BANCO E PREENCHE A TELA
-  =====================================================
-*/
+function urlDaNotaFiscal(idFaturamento) {
+  return `imprimir_nota_fiscal.html?id=${encodeURIComponent(idFaturamento)}`;
+}
+
+function abrirJanelaDeNota() {
+  const janelaNota = window.open("", "_blank");
+
+  if (janelaNota) {
+    janelaNota.document.title = "Gerando nota fiscal";
+    janelaNota.document.body.textContent = "Gerando nota fiscal...";
+  }
+
+  return janelaNota;
+}
+
+function mostrarAcessoNota(idFaturamento, numeroNota) {
+  const urlNota = urlDaNotaFiscal(idFaturamento);
+  mensagem.textContent = `Nota fiscal nº ${numeroNota} gerada com sucesso. `;
+  mensagem.className = "sucesso";
+
+  const linkNota = document.createElement("a");
+  linkNota.href = urlNota;
+  linkNota.target = "_blank";
+  linkNota.rel = "noopener";
+  linkNota.textContent = "Abrir documento para salvar em PDF";
+  mensagem.appendChild(linkNota);
+}
+
+function fecharJanelaDeNota(janelaNota) {
+  if (janelaNota && !janelaNota.closed) {
+    janelaNota.close();
+  }
+}
+
+function finalizarFormulario() {
+  formFaturamento
+    .querySelectorAll("select, textarea, button[type=submit]")
+    .forEach((campo) => {
+      campo.disabled = true;
+    });
+}
+
 async function carregarOrcamento(id) {
   mensagem.textContent = "Carregando dados do orçamento...";
   mensagem.className = "";
@@ -52,17 +77,15 @@ async function carregarOrcamento(id) {
     .single();
 
   if (error || !orcamento) {
-    alert("Não foi possível carregar este orçamento.");
-    window.close();
+    mensagem.textContent = "Não foi possível carregar este orçamento.";
+    mensagem.className = "erro";
+    console.error(error);
     return;
   }
 
-  // Só deixa faturar orçamento que está APROVADO. Isso evita, por
-  // exemplo, faturar um orçamento que ainda está pendente ou que já
-  // foi reprovado.
   if (orcamento.status_orcamento !== "APROVADO") {
-    alert("Somente orçamentos com status APROVADO podem ser faturados.");
-    window.close();
+    mensagem.textContent = "Somente orçamentos aprovados podem ser faturados.";
+    mensagem.className = "erro";
     return;
   }
 
@@ -70,82 +93,169 @@ async function carregarOrcamento(id) {
   clienteFatInput.value = orcamento.clientes?.nome_cliente || "";
   valorFatInput.value = "R$ " + formatarMoeda(orcamento.vl_total_orcamento);
   dataFatInput.value = new Date().toLocaleString("pt-BR");
-
-  valorOrcamentoCarregado = orcamento.vl_total_orcamento;
-
+  valorOrcamentoCarregado = Number(orcamento.vl_total_orcamento) || 0;
+  orcamentoProntoParaFaturar = true;
+  botaoGerarNota.disabled = false;
   mensagem.textContent = "";
-  mensagem.className = "";
 }
 
-/*
-  =====================================================
-  EVENTO DE ENVIO DO FORMULÁRIO
-  =====================================================
-*/
 formFaturamento.addEventListener("submit", async function (evento) {
   evento.preventDefault();
 
-  const formaPagamento = formaPagamentoFatSelect.value;
-  const botaoEnviar = formFaturamento.querySelector("button[type=submit]");
+  if (!orcamentoProntoParaFaturar) {
+    mensagem.textContent = "Aguarde o carregamento do orçamento.";
+    mensagem.className = "erro";
+    return;
+  }
 
+  const formaPagamento = formaPagamentoFatSelect.value;
   if (!formaPagamento) {
     mensagem.textContent = "Selecione a forma de pagamento.";
     mensagem.className = "erro";
     return;
   }
 
+  // A janela é aberta durante o clique do usuário para não ser bloqueada
+  // como pop-up após as operações assíncronas.
+  const janelaNota = abrirJanelaDeNota();
+  botaoGerarNota.disabled = true;
+  mensagem.textContent = "Gerando faturamento e nota fiscal...";
+  mensagem.className = "";
+
+  // Revalida o status e evita uma segunda geração em uma aba já concluída.
+  const { data: orcamentoAtual, error: erroConsultaOrcamento } = await supabaseClient
+    .from("orcamentos")
+    .select("status_orcamento")
+    .eq("orcamentoid", idOrcamento)
+    .single();
+
+  if (erroConsultaOrcamento || !orcamentoAtual || orcamentoAtual.status_orcamento !== "APROVADO") {
+    mensagem.textContent = "Este orçamento não está mais disponível para faturamento.";
+    mensagem.className = "erro";
+    console.error(erroConsultaOrcamento);
+    fecharJanelaDeNota(janelaNota);
+    botaoGerarNota.disabled = false;
+    return;
+  }
+
+  const { data: faturamentoExistente, error: erroBuscaFaturamento } = await supabaseClient
+    .from("faturamentos")
+    .select("faturamentoid, nr_nota_fiscal")
+    .eq("orcamentoid", idOrcamento)
+    .maybeSingle();
+
+  if (erroBuscaFaturamento) {
+    mensagem.textContent = "Não foi possível verificar os faturamentos existentes.";
+    mensagem.className = "erro";
+    console.error(erroBuscaFaturamento);
+    fecharJanelaDeNota(janelaNota);
+    botaoGerarNota.disabled = false;
+    return;
+  }
+
+  if (faturamentoExistente) {
+    const numeroExistente = faturamentoExistente.nr_nota_fiscal || faturamentoExistente.faturamentoid;
+
+    if (!faturamentoExistente.nr_nota_fiscal) {
+      const { error: erroNumeroExistente } = await supabaseClient
+        .from("faturamentos")
+        .update({ nr_nota_fiscal: numeroExistente })
+        .eq("faturamentoid", faturamentoExistente.faturamentoid);
+
+      if (erroNumeroExistente) {
+        mensagem.textContent = "Já existe um faturamento, mas não foi possível gerar o número da nota.";
+        mensagem.className = "erro";
+        console.error(erroNumeroExistente);
+        fecharJanelaDeNota(janelaNota);
+        return;
+      }
+    }
+
+    // Corrige uma eventual inconsistência antiga: se já existe faturamento,
+    // o orçamento correspondente precisa permanecer marcado como faturado.
+    const { data: orcamentoAtualizado, error: erroAtualizacaoExistente } = await supabaseClient
+      .from("orcamentos")
+      .update({ status_orcamento: "FATURADO" })
+      .eq("orcamentoid", idOrcamento)
+      .eq("status_orcamento", "APROVADO")
+      .select("orcamentoid");
+
+    if (erroAtualizacaoExistente || !orcamentoAtualizado?.length) {
+      mensagem.textContent = "Já existe um faturamento, mas não foi possível atualizar o status do orçamento.";
+      mensagem.className = "erro";
+      console.error(erroAtualizacaoExistente);
+      fecharJanelaDeNota(janelaNota);
+      return;
+    }
+
+    notaFiscalFatInput.value = numeroExistente;
+    mostrarAcessoNota(faturamentoExistente.faturamentoid, numeroExistente);
+    if (janelaNota) janelaNota.location.href = urlDaNotaFiscal(faturamentoExistente.faturamentoid);
+    finalizarFormulario();
+    return;
+  }
+
   const dadosFaturamento = {
     orcamentoid: idOrcamento,
-    nr_nota_fiscal: notaFiscalFatInput.value.trim() || null,
+    nr_nota_fiscal: null,
     forma_pagamento: formaPagamento,
     vl_faturado: valorOrcamentoCarregado,
     observacao_faturamento: obsFatInput.value.trim() || null,
   };
 
-  // MELHORIA: trava o botão logo no início para evitar duplo clique
-  // gerando dois faturamentos para o mesmo orçamento.
-  botaoEnviar.disabled = true;
-
-  // Passo 1: insere o registro na tabela "faturamentos"
-  const { error: erroFaturamento } = await supabaseClient
+  const { data: faturamentoGerado, error: erroFaturamento } = await supabaseClient
     .from("faturamentos")
-    .insert(dadosFaturamento);
+    .insert(dadosFaturamento)
+    .select("faturamentoid")
+    .single();
 
-  if (erroFaturamento) {
-    mensagem.textContent = "Erro ao gerar faturamento: " + erroFaturamento.message;
+  if (erroFaturamento || !faturamentoGerado) {
+    mensagem.textContent = "Erro ao gerar faturamento: " + (erroFaturamento?.message || "registro não retornado.");
     mensagem.className = "erro";
     console.error(erroFaturamento);
-    botaoEnviar.disabled = false;
+    fecharJanelaDeNota(janelaNota);
+    botaoGerarNota.disabled = false;
     return;
   }
 
-  // Passo 2: atualiza o status do orçamento para "FATURADO",
-  // pra ele sair da lista de "aprovados aguardando faturamento"
-  const { error: erroOrcamento } = await supabaseClient
+  // O ID do faturamento vira uma referência rastreável para a nota simulada.
+  const numeroNota = faturamentoGerado.faturamentoid;
+  const { error: erroNumeroNota } = await supabaseClient
+    .from("faturamentos")
+    .update({ nr_nota_fiscal: numeroNota })
+    .eq("faturamentoid", faturamentoGerado.faturamentoid);
+
+  if (erroNumeroNota) {
+    mensagem.textContent = "Faturamento salvo, mas não foi possível gerar o número da nota: " + erroNumeroNota.message;
+    mensagem.className = "erro";
+    console.error(erroNumeroNota);
+    fecharJanelaDeNota(janelaNota);
+    return;
+  }
+
+  const { data: orcamentosAtualizados, error: erroOrcamento } = await supabaseClient
     .from("orcamentos")
     .update({ status_orcamento: "FATURADO" })
-    .eq("orcamentoid", idOrcamento);
+    .eq("orcamentoid", idOrcamento)
+    .eq("status_orcamento", "APROVADO")
+    .select("orcamentoid");
 
-  if (erroOrcamento) {
-    mensagem.textContent =
-      "Faturamento salvo, mas houve erro ao atualizar o status do orçamento: " +
-      erroOrcamento.message;
+  if (erroOrcamento || !orcamentosAtualizados?.length) {
+    const detalheErro =
+      erroOrcamento?.message || "o orçamento foi alterado por outra operação.";
+    mensagem.textContent = "Faturamento e nota salvos, mas houve erro ao atualizar o orçamento: " + detalheErro;
     mensagem.className = "erro";
     console.error(erroOrcamento);
-    // Propositalmente NÃO reabilitamos o botão aqui: o faturamento já
-    // foi gravado, então faturar de novo criaria um registro duplicado.
+    fecharJanelaDeNota(janelaNota);
     return;
   }
 
-  mensagem.textContent = "Faturamento gerado com sucesso!";
-  mensagem.className = "sucesso";
+  notaFiscalFatInput.value = numeroNota;
+  dataFatInput.value = new Date().toLocaleString("pt-BR");
+  mostrarAcessoNota(faturamentoGerado.faturamentoid, numeroNota);
+  finalizarFormulario();
 
-  // Trava o formulário depois de faturar, já que não faz sentido
-  // faturar o mesmo orçamento de novo na mesma tela.
+  if (janelaNota) {
+    janelaNota.location.href = urlDaNotaFiscal(faturamentoGerado.faturamentoid);
+  }
 });
-
-/*
-  =====================================================
-  BOTÃO VOLTAR: FECHA A ABA (vem de scripts/common.js)
-  =====================================================
-*/

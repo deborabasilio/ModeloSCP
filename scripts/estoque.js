@@ -103,9 +103,17 @@ async function processarAprovacaoDeOrcamento(supabaseClientAtual, idOrcamento) {
 
     const novoEstoque = produto.qt_estoque_produto - item.qt_produto;
 
+    // NOVA REGRA: se essa baixa zerar o estoque do produto, ele é marcado
+    // automaticamente como INATIVO, ficando assim até o usuário editá-lo
+    // novamente (na tela de Produtos) e escolher outro status.
+    const dadosAtualizacao = { qt_estoque_produto: novoEstoque };
+    if (novoEstoque === 0) {
+      dadosAtualizacao.status_produto = "INATIVO";
+    }
+
     const { data: linhasAtualizadas } = await supabaseClientAtual
       .from("produtos")
-      .update({ qt_estoque_produto: novoEstoque })
+      .update(dadosAtualizacao)
       .eq("produtoid", item.produtoid)
       .gte("qt_estoque_produto", item.qt_produto) // só atualiza se ainda houver estoque suficiente
       .select("produtoid");

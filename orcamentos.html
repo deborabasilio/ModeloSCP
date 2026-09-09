@@ -28,6 +28,7 @@
     <div id="areaVisualizacao" class="oculto">
       <div class="empty-state caixa-visualizacao-orcamento">
         <button type="button" id="btnImprimirVis" class="btn-imprimir-vis">
+          Imprimir Orçamento
         </button>
 
         <p><strong>Orçamento nº:</strong> <span id="visCodigo"></span></p>
@@ -78,7 +79,7 @@
 
       <label for="clienteSelec">Cliente selecionado:</label>
       <input type="text" id="clienteSelec" list="listaClientes" placeholder="Digite para buscar o cliente..."
-        autocomplete="new-off-clientes" required />
+        autocomplete="off" required />
       <input type="hidden" id="clienteSelecId" />
       <datalist id="listaClientes"></datalist>
 
@@ -91,7 +92,7 @@
       <h3>Itens do Orçamento</h3>
 
       <label for="produtoOrc">Produto:</label>
-      <input type="text" id="produtoOrc" list="listaProdutosOrc" autocomplete="new-off-produtos"
+      <input type="text" id="produtoOrc" list="listaProdutosOrc" autocomplete="off"
         placeholder="Digite para buscar o produto..." />
       <input type="hidden" id="produtoOrcId" />
       <datalist id="listaProdutosOrc"></datalist>

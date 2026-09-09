@@ -43,18 +43,11 @@ const NOME_TABELA = "categoria_produto";
   usuário ter uma ideia antes de salvar.
 */
 async function mostrarProximoCodigo() {
-  const { count, error } = await supabaseClient
-    .from(NOME_TABELA)
-    .select("*", { count: "exact", head: true });
-
-  if (error) {
-    // Se não conseguir contar, não trava a tela, só deixa em branco.
-    codigoCategoriaInput.value = "";
-    console.error(error);
-    return;
-  }
-
-  codigoCategoriaInput.value = (count ?? 0) + 1;
+  await mostrarProximoCodigoNoCampo(
+    NOME_TABELA,
+    "categoriaprodutoid",
+    codigoCategoriaInput,
+  );
 }
 
 /*

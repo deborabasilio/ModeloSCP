@@ -342,16 +342,12 @@ body {
   color: #7c3aed;
 }
 
-.menu-acoes-dropdown .btn-aprovar {
-  color: #16a34a;
-}
-
-.menu-acoes-dropdown .btn-reprovar {
-  color: #4b5563;
-}
-
 .menu-acoes-dropdown .btn-excluir {
   color: #dc2626;
+}
+
+.menu-acoes-dropdown .btn-nota-fiscal {
+  color: #1d4ed8;
 }
 
 /* =========================================

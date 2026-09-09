@@ -87,28 +87,7 @@ if (sessaoCliente) {
   =====================================================
 */
 async function buscarProximoCodigo() {
-  codigoOrcamentoInput.value = "Buscando...";
-
-  // Busca apenas o maior clienteid cadastrado
-  const { data, error } = await supabaseClient
-    .from("clientes")
-    .select("clienteid")
-    .order("clienteid", { ascending: false })
-    .limit(1);
-
-  if (error) {
-    console.error("Erro ao buscar próximo código:", error);
-    codigoOrcamentoInput.value = "Erro";
-    return;
-  }
-
-  // Se houver dados, soma 1. Se a tabela estiver vazia, começa do 1.
-  let proximoId = 1;
-  if (data && data.length > 0) {
-    proximoId = data[0].clienteid + 1;
-  }
-
-  codigoOrcamentoInput.value = proximoId;
+  await mostrarProximoCodigoNoCampo("clientes", "clienteid", codigoOrcamentoInput);
 }
 
 /*
@@ -207,6 +186,17 @@ formCliente.addEventListener("submit", async function (evento) {
 
   if (!nomeCliente.trim()) {
     mensagem.textContent = "Digite o nome do cliente.";
+    mensagem.className = "erro";
+    return;
+  }
+
+  const quantidadeEsperadaDeDigitos = tipoCliente === "F" ? 11 : 14;
+  const quantidadeDeDigitos = cpfCnpjCliente.replace(/\D/g, "").length;
+  if (quantidadeDeDigitos !== quantidadeEsperadaDeDigitos) {
+    mensagem.textContent =
+      tipoCliente === "F"
+        ? "Informe os 11 dígitos do CPF."
+        : "Informe os 14 dígitos do CNPJ.";
     mensagem.className = "erro";
     return;
   }

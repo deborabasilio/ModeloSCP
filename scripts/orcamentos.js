@@ -54,7 +54,9 @@ const botaoSalvarOrcamento = document.getElementById("botaoSalvarOrcamento");
 // =====================================================
 const sessaoOrcamento = protegerRota();
 if (sessaoOrcamento) {
-  bloquearEdicaoSemPermissao(sessaoOrcamento.podeEditar);
+  // Um orçamento pode ser visualizado por quem só tem consulta; a permissão
+  // de edição é exigida apenas quando a URL pede explicitamente modo=editar.
+  bloquearEdicaoSemPermissao(sessaoOrcamento.podeEditar, true);
 }
 
 // Converte o que foi digitado no campo de desconto (aceita "10", "10,5"
@@ -99,17 +101,11 @@ descontoOrcamentoInput.addEventListener("input", recalcularValorFinalOrcamento);
 dataOrcamentoInput.value = new Date().toLocaleString("pt-BR");
 
 async function mostrarProximoCodigo() {
-  const { count, error } = await supabaseClient
-    .from(TABELA_ORCAMENTO)
-    .select("*", { count: "exact", head: true });
-
-  if (error) {
-    codigoOrcamentoInput.value = "";
-    console.error(error);
-    return;
-  }
-
-  codigoOrcamentoInput.value = (count ?? 0) + 1;
+  await mostrarProximoCodigoNoCampo(
+    TABELA_ORCAMENTO,
+    "orcamentoid",
+    codigoOrcamentoInput,
+  );
 }
 
 async function carregarClientes() {
@@ -543,7 +539,7 @@ async function carregarOrcamentoParaVisualizacao(idOrcamento) {
         )
         .join("");
 
-  if (orcamento.status_orcamento === "PENDENTE") {
+  if (orcamento.status_orcamento === "PENDENTE" && sessaoOrcamento?.podeEditar) {
     visAcoesAprovacao.classList.remove("oculto");
   } else {
     visAcoesAprovacao.classList.add("oculto");

@@ -58,9 +58,12 @@ function protegerRota() {
 // Usada nas telas de cadastro (produtos, clientes, categorias, orçamentos):
 // se a página foi aberta em modo edição ("?id=...") e o usuário não pode
 // editar, barra o acesso e manda de volta para o menu.
-function bloquearEdicaoSemPermissao(podeEditar) {
-  const idAcesso = new URLSearchParams(window.location.search).get("id");
-  if (idAcesso && !podeEditar) {
+function bloquearEdicaoSemPermissao(podeEditar, exigirModoEdicao = false) {
+  const parametros = new URLSearchParams(window.location.search);
+  const idAcesso = parametros.get("id");
+  const estaEmModoEdicao = !exigirModoEdicao || parametros.get("modo") === "editar";
+
+  if (idAcesso && estaEmModoEdicao && !podeEditar) {
     alert("Você não tem permissão para visualizar ou editar registros.");
     window.location.href = "menu.html";
   }
@@ -76,6 +79,31 @@ function formatarMoeda(valor) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+
+/*
+  Mostra uma estimativa do próximo ID para fins de interface. O banco continua
+  sendo a fonte de verdade e gera a chave definitiva ao salvar o registro.
+*/
+async function mostrarProximoCodigoNoCampo(tabela, colunaId, campo) {
+  campo.value = "Buscando...";
+
+  const { data, error } = await supabaseClient
+    .from(tabela)
+    .select(colunaId)
+    .order(colunaId, { ascending: false })
+    .limit(1);
+
+  if (error) {
+    campo.value = "";
+    console.error("Erro ao buscar o próximo código:", error);
+    return null;
+  }
+
+  const maiorId = Number(data?.[0]?.[colunaId]) || 0;
+  const proximoId = maiorId + 1;
+  campo.value = proximoId;
+  return proximoId;
 }
 
 /*

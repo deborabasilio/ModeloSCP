@@ -10,12 +10,12 @@
 
   <!-- Botões de Controle (Ocultos na Impressão) -->
   <div class="controles-tela">
-    <button class="btn btn-imprimir" onclick="window.print()">Imprimir Novamente</button>
+    <button class="btn btn-imprimir" onclick="window.print()">Salvar como PDF / Imprimir</button>
     <button class="btn btn-fechar" onclick="window.close()">Fechar Guia</button>
   </div>
 
   <div class="folha-a4">
-    <!-- AVISO DE DOCUMENTO SIMULADO (some na impressão, veja o CSS abaixo) -->
+    <!-- Aviso permanente: este projeto não emite NF-e oficial. -->
     <div class="aviso-simulacao">
       DOCUMENTO SIMULADO — SEM VALOR FISCAL — USO EXCLUSIVO PARA ESTUDO
     </div>
@@ -42,10 +42,10 @@
 
       <div class="bloco-dados">
         <h3>Detalhes do Faturamento</h3>
+        <strong>Faturamento nº:</strong> <span id="doc-faturamento"></span><br>
         <strong>Orçamento nº:</strong> <span id="doc-orcamento"></span><br>
         <strong>Data de Emissão:</strong> <span id="doc-data"></span><br>
         <strong>Forma de Pagamento:</strong> <span id="doc-pagamento"></span><br>
-        <strong>Nota Fiscal nº:</strong> <span id="doc-notafiscal"></span>
       </div>
     </div>
 

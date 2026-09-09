@@ -102,17 +102,7 @@ valorVendaInput.addEventListener("input", function () {
   =====================================================
 */
 async function mostrarProximoCodigo() {
-  const { count, error } = await supabaseClient
-    .from(TABELA_PRODUTOS)
-    .select("*", { count: "exact", head: true });
-
-  if (error) {
-    idProdInput.value = "";
-    console.error(error);
-    return;
-  }
-
-  idProdInput.value = (count ?? 0) + 1;
+  await mostrarProximoCodigoNoCampo(TABELA_PRODUTOS, "produtoid", idProdInput);
 }
 
 let mapaCategorias = {}; // id -> nome (usado ao carregar um produto para edição)
@@ -266,7 +256,7 @@ formProdutos.addEventListener("submit", async function (evento) {
   const descricao = descProdInput.value.trim();
   const observacao = obsProdInput.value.trim();
   const valorVenda = valorVendaInput.value;
-  const qtdEstoque = qtdEstoqueProdInput.value;
+  const qtdEstoque = Number(qtdEstoqueProdInput.value);
   const status = statusProdSelect.value;
 
   if (descricao === "") {
@@ -283,6 +273,12 @@ formProdutos.addEventListener("submit", async function (evento) {
 
   if (status === "") {
     mensagem.textContent = "Selecione o status do produto.";
+    mensagem.className = "erro";
+    return;
+  }
+
+  if (!Number.isInteger(qtdEstoque) || qtdEstoque < 0) {
+    mensagem.textContent = "Informe uma quantidade de estoque válida.";
     mensagem.className = "erro";
     return;
   }

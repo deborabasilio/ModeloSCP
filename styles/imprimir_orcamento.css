@@ -159,7 +159,7 @@ td.num {
   }
 }
 
-/* Aviso de que o documento é simulado (some na hora de imprimir) */
+/* Aviso de que o documento é simulado: ele também aparece no PDF impresso. */
 .aviso-simulacao {
   margin-bottom: 20px;
   padding: 10px 14px;
@@ -170,10 +170,4 @@ td.num {
   font-size: 13px;
   font-weight: bold;
   text-align: center;
-}
-
-@media print {
-  .aviso-simulacao {
-    display: none;
-  }
 }

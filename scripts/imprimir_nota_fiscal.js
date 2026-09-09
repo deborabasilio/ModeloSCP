@@ -55,13 +55,16 @@ async function carregarNotaFiscal() {
   const orcamento = fatura.orcamentos;
 
   // Preenche os textos na tela
-  document.getElementById("doc-numero").textContent = fatura.faturamentoid;
+  // A referência da nota é gerada a partir do ID do faturamento. Mantemos
+  // também o ID separado para facilitar a rastreabilidade no sistema.
+  document.getElementById("doc-numero").textContent =
+    fatura.nr_nota_fiscal || fatura.faturamentoid;
+  document.getElementById("doc-faturamento").textContent = fatura.faturamentoid;
   document.getElementById("doc-orcamento").textContent = orcamento?.orcamentoid ?? "";
   document.getElementById("doc-cliente").textContent = orcamento?.clientes?.nome_cliente || "Não informado";
   document.getElementById("doc-cpf").textContent = orcamento?.clientes?.cpf_cnpj_cliente || "Não informado";
   document.getElementById("doc-data").textContent = new Date(fatura.dt_faturamento).toLocaleString("pt-BR");
   document.getElementById("doc-pagamento").textContent = formatarFormaPagamento(fatura.forma_pagamento);
-  document.getElementById("doc-notafiscal").textContent = fatura.nr_nota_fiscal || "Não informado";
   document.getElementById("doc-total").textContent = "R$ " + formatarMoeda(fatura.vl_faturado);
 
   // Preenche a tabela de itens
