@@ -13,6 +13,8 @@ const codigoOrcamentoInput = document.getElementById("codigoOrcamento");
 const clienteSelecSelect = document.getElementById("clienteSelec");
 const clienteSelecIdInput = document.getElementById("clienteSelecId");
 const dataOrcamentoInput = document.getElementById("dataOrcamento");
+const statusOrcamentoSelect = document.getElementById("statusOrcamento");
+const grupoStatusOrcamento = document.getElementById("grupoStatusOrcamento");
 const validadeOrcamentoInput = document.getElementById("validadeOrcamento");
 
 const produtoOrcSelect = document.getElementById("produtoOrc");
@@ -351,6 +353,7 @@ formOrcamento.addEventListener("submit", async function (evento) {
       ).toISOString(),
       vl_total_orcamento: valorFinalComDesconto,
       vl_desconto_orcamento: percentualDescontoAtual,
+      status_orcamento: statusOrcamentoSelect.value,
     };
 
     const { error: erroOrcamento } = await supabaseClient
@@ -579,11 +582,15 @@ async function carregarOrcamentoParaEdicao(idOrcamento) {
     return;
   }
 
-  // Só faz sentido editar orçamentos ainda pendentes: um orçamento já
-  // finalizado já baixou estoque, e um reprovado já foi encerrado.
-  if (orcamento.status_orcamento !== "PENDENTE") {
+  // Um orçamento já FATURADO não pode mais ser editado: o faturamento
+  // já foi gerado e o estoque já foi descontado com base nos itens que
+  // ele tinha naquele momento — mudar os itens agora deixaria o
+  // faturamento e a nota fiscal desatualizados. PENDENTE, APROVADO e
+  // REPROVADO podem ser editados normalmente (inclusive para corrigir
+  // o status e adicionar itens que faltaram).
+  if (orcamento.status_orcamento === "FATURADO") {
     alert(
-      "Somente orçamentos com status PENDENTE podem ser editados. Abrindo em modo de visualização.",
+      "Orçamentos já FATURADOS não podem mais ser editados. Abrindo em modo de visualização.",
     );
     document.documentElement.classList.remove("carregando-edicao");
     carregarOrcamentoParaVisualizacao(idOrcamento);
@@ -621,6 +628,9 @@ async function carregarOrcamentoParaEdicao(idOrcamento) {
   // final acontece dentro de desenharListaDeItens(), então precisa vir
   // antes dela.
   descontoOrcamentoInput.value = orcamento.vl_desconto_orcamento ?? 0;
+
+  statusOrcamentoSelect.value = orcamento.status_orcamento;
+  grupoStatusOrcamento.classList.remove("oculto");
 
   desenharListaDeItens();
 

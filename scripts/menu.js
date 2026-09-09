@@ -227,6 +227,8 @@ document.addEventListener("DOMContentLoaded", function () {
             valorExibicao = `<span style="color: red; font-weight: bold;">${valorExibicao}</span>`;
           } else if (statusTexto === "PENDENTE") {
             valorExibicao = `<span style="color: #b8860b; font-weight: bold;">${valorExibicao}</span>`;
+          } else if (statusTexto === "FATURADO") {
+            valorExibicao = `<span style="color: #1d4ed8; font-weight: bold;">${valorExibicao}</span>`;
           }
         }
 
@@ -257,8 +259,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (usuarioPodeEditar) {
         if (PAGINA_DA_TABELA[nomeTabela]) {
-          itensAcao +=
-            '<button type="button" class="btn-editar">Editar</button>';
+          // Um orçamento FATURADO não pode mais ser editado (o faturamento e
+          // a baixa de estoque já foram feitos com base nos itens daquele
+          // momento), então mostramos "Visualizar" em vez de "Editar" só
+          // nesse caso. PENDENTE, APROVADO e REPROVADO continuam editáveis.
+          if (nomeTabela === "orcamentos" && linha.Status === "FATURADO") {
+            itensAcao +=
+              '<button type="button" class="btn-visualizar">Visualizar</button>';
+          } else {
+            itensAcao +=
+              '<button type="button" class="btn-editar">Editar</button>';
+          }
         }
 
         if (nomeTabela === "faturamentos") {

@@ -397,19 +397,29 @@ body {
    CORES DOS RETÂNGULOS
    ===================== */
 .painel-card.verde {
-  background: #d4edda;
+  background: #5bfc80;
 }
 
 .painel-card.amarelo {
-  background: #fff3cd;
+  background: #ffda60;
 }
 
 .painel-card.vermelho {
-  background: #f8d7da;
+  background: #f66470;
 }
 
 .painel-card.azul {
-  background: #d6e6fb;
+  background: #62a4fa;
+}
+
+/* ======================
+   RODAPÉ DO PAINEL (VERSÃO DO SISTEMA)
+   ===================== */
+.rodape-painel {
+  margin-top: 32px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #6b7280;
 }
 
 /* =========================================
