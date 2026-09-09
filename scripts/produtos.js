@@ -1,16 +1,5 @@
 /*
   =====================================================
-  CONFIGURAÇÃO DO SUPABASE
-  =====================================================
-*/
-
-const SUPABASE_URL = "https://whidvijhqmudgzyylbfo.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_MHgrDJpm8wa4mGTJWPR0sg_08Bc9dut";
-
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/*
-  =====================================================
   NOMES DA TABELA E DAS COLUNAS
   =====================================================
 */
@@ -36,35 +25,19 @@ const statusProdSelect = document.getElementById("statusProd");
 const mensagem = document.getElementById("mensagem");
 const botaoSalvar = document.getElementById("botao");
 
-// Extrai o código escondido no formato "Nome (Código: 5)" que o datalist usa internamente
-function extrairCodigoDoTexto(texto) {
-  const match = String(texto || "").match(/\(Código:\s*(\d+)\)\s*$/);
-  return match ? match[1] : null;
-}
+// MELHORIA: extrairCodigoDoTexto, formatarMoeda, proteção de rota,
+// "forçar maiúsculas" e o botão "Voltar" agora vêm de scripts/common.js
+// (incluído no HTML antes deste arquivo), em vez de estarem copiados
+// aqui.
 
 let idProdutoEmEdicao = null;
 
 // =====================================================
 // PROTEÇÃO DE ROTA E PERMISSÕES
 // =====================================================
-const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
-
-if (!usuarioLogadoTexto) {
-  window.location.href = "login.html"; // Expulsa se não estiver logado
-} else {
-  const usuarioLogado = JSON.parse(usuarioLogadoTexto);
-  const ehAdmin =
-    String(usuarioLogado.tipo_usuario).trim().toUpperCase() !== "PADRAO";
-  const usuarioPodeEditar = ehAdmin || usuarioLogado.pode_editar === true;
-
-  const parametrosUrl = new URLSearchParams(window.location.search);
-  const idAcesso = parametrosUrl.get("id");
-
-  // Se estiver tentando acessar um orçamento existente (Visualizar/Editar) sem permissão
-  if (idAcesso && !usuarioPodeEditar) {
-    alert("Você não tem permissão para visualizar ou editar registros.");
-    window.location.href = "menu.html";
-  }
+const sessaoProdutos = protegerRota();
+if (sessaoProdutos) {
+  bloquearEdicaoSemPermissao(sessaoProdutos.podeEditar);
 }
 
 /*
@@ -296,12 +269,6 @@ formProdutos.addEventListener("submit", async function (evento) {
   const qtdEstoque = qtdEstoqueProdInput.value;
   const status = statusProdSelect.value;
 
-  if (categoria === "") {
-    mensagem.textContent = "Selecione uma categoria antes de salvar.";
-    mensagem.className = "erro";
-    return;
-  }
-
   if (descricao === "") {
     mensagem.textContent = "Digite a descrição do produto.";
     mensagem.className = "erro";
@@ -329,6 +296,10 @@ formProdutos.addEventListener("submit", async function (evento) {
     status_produto: status,
   };
 
+  // MELHORIA: trava o botão de salvar durante o envio, evitando duplo
+  // clique disparar duas gravações do mesmo produto.
+  botaoSalvar.disabled = true;
+
   let erroSupabase = null;
 
   if (idProdutoEmEdicao) {
@@ -348,6 +319,8 @@ formProdutos.addEventListener("submit", async function (evento) {
 
     erroSupabase = error;
   }
+
+  botaoSalvar.disabled = false;
 
   if (erroSupabase) {
     mensagem.textContent = "Erro ao salvar produto: " + erroSupabase.message;
@@ -410,44 +383,3 @@ async function iniciarPagina() {
 }
 
 iniciarPagina();
-/*
-  =====================================================
-  FORÇAR LETRAS MAIÚSCULAS NOS CAMPOS DE TEXTO
-  =====================================================
-*/
-document.addEventListener("DOMContentLoaded", function () {
-  // Seleciona todos os inputs de texto e textareas da página atual
-  const camposTexto = document.querySelectorAll('input[type="text"], textarea');
-
-  camposTexto.forEach((campo) => {
-    campo.addEventListener("input", function () {
-      // Guarda a posição atual do cursor para não pular pro final ao digitar no meio do texto
-      const inicioCursor = this.selectionStart;
-      const fimCursor = this.selectionEnd;
-
-      // Converte o valor para maiúsculas
-      this.value = this.value.toUpperCase();
-
-      // Restaura a posição do cursor
-      this.setSelectionRange(inicioCursor, fimCursor);
-    });
-  });
-});
-/*
-  =====================================================
-  BOTÃO VOLTAR: FECHA A ABA EM VEZ DE NAVEGAR
-  =====================================================
-  Como esta página é sempre aberta em uma nova aba (a partir do menu),
-  "Voltar" deve fechar a aba atual e devolver o usuário para a aba do
-  menu que já estava aberta, em vez de carregar menu.html aqui e ir
-  acumulando abas.
-*/
-document.getElementById("botaoVoltarForm")?.addEventListener("click", function () {
-  window.close();
-
-  // Se o navegador não deixar fechar (ex.: a página foi aberta digitando
-  // a URL direto, e não por um link/script), caímos de volta para o menu.
-  setTimeout(() => {
-    window.location.href = "menu.html";
-  }, 300);
-});

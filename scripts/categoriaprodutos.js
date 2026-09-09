@@ -1,21 +1,5 @@
 /*
   =====================================================
-  CONFIGURAÇÃO DO SUPABASE
-  =====================================================
-  Mesmos dados de conexão usados nas outras páginas
-  do sistema.
-*/
-
-const SUPABASE_URL = "https://whidvijhqmudgzyylbfo.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_MHgrDJpm8wa4mGTJWPR0sg_08Bc9dut";
-
-const supabaseClient = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
-
-/*
-  =====================================================
   PEGANDO OS ELEMENTOS DO HTML
   =====================================================
 */
@@ -32,24 +16,11 @@ let idCategoriaEmEdicao = null;
 // =====================================================
 // PROTEÇÃO DE ROTA E PERMISSÕES
 // =====================================================
-const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
-
-if (!usuarioLogadoTexto) {
-  window.location.href = "login.html"; // Expulsa se não estiver logado
-} else {
-  const usuarioLogado = JSON.parse(usuarioLogadoTexto);
-  const ehAdmin = String(usuarioLogado.tipo_usuario).trim().toUpperCase() !== "PADRAO";
-  const usuarioPodeEditar = ehAdmin || usuarioLogado.pode_editar === true;
-
-  const parametrosUrl = new URLSearchParams(window.location.search);
-  const idAcesso = parametrosUrl.get("id");
-
-  // Se estiver tentando acessar um orçamento existente (Visualizar/Editar) sem permissão
-  if (idAcesso && !usuarioPodeEditar) {
-    alert("Você não tem permissão para visualizar ou editar registros.");
-    window.location.href = "menu.html";
-  }
+const sessaoCategoria = protegerRota();
+if (sessaoCategoria) {
+  bloquearEdicaoSemPermissao(sessaoCategoria.podeEditar);
 }
+
 /*
   =====================================================
   NOME DA TABELA NO BANCO
@@ -167,12 +138,14 @@ formCategoria.addEventListener("submit", async function (evento) {
 
   /*
     Montamos o objeto com os dados da categoria.
-    IMPORTANTE: o nome da propriedade "descricao_categoria"
+    IMPORTANTE: o nome da propriedade "ds_categoria_produto"
     precisa ser igual ao nome da coluna no Supabase.
   */
   const dadosCategoria = {
     ds_categoria_produto: descricaoCategoria
   };
+
+  botaoSalvar.disabled = true;
 
   let erroSupabase = null;
 
@@ -190,6 +163,8 @@ formCategoria.addEventListener("submit", async function (evento) {
 
     erroSupabase = error;
   }
+
+  botaoSalvar.disabled = false;
 
   if (erroSupabase) {
     mensagem.textContent = "Erro ao salvar categoria: " + erroSupabase.message;
@@ -230,45 +205,4 @@ formCategoria.addEventListener("submit", async function (evento) {
     mensagem.textContent = "";
     mensagem.className = "";
   }, 5000);
-});
-/*
-  =====================================================
-  FORÇAR LETRAS MAIÚSCULAS NOS CAMPOS DE TEXTO
-  =====================================================
-*/
-document.addEventListener("DOMContentLoaded", function () {
-  // Seleciona todos os inputs de texto e textareas da página atual
-  const camposTexto = document.querySelectorAll('input[type="text"], textarea');
-
-  camposTexto.forEach(campo => {
-    campo.addEventListener('input', function () {
-      // Guarda a posição atual do cursor para não pular pro final ao digitar no meio do texto
-      const inicioCursor = this.selectionStart;
-      const fimCursor = this.selectionEnd;
-      
-      // Converte o valor para maiúsculas
-      this.value = this.value.toUpperCase();
-      
-      // Restaura a posição do cursor
-      this.setSelectionRange(inicioCursor, fimCursor);
-    });
-  });
-});
-/*
-  =====================================================
-  BOTÃO VOLTAR: FECHA A ABA EM VEZ DE NAVEGAR
-  =====================================================
-  Como esta página é sempre aberta em uma nova aba (a partir do menu),
-  "Voltar" deve fechar a aba atual e devolver o usuário para a aba do
-  menu que já estava aberta, em vez de carregar menu.html aqui e ir
-  acumulando abas.
-*/
-document.getElementById("botaoVoltarForm")?.addEventListener("click", function () {
-  window.close();
-
-  // Se o navegador não deixar fechar (ex.: a página foi aberta digitando
-  // a URL direto, e não por um link/script), caímos de volta para o menu.
-  setTimeout(() => {
-    window.location.href = "menu.html";
-  }, 300);
 });

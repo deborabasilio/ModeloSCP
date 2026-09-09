@@ -1,23 +1,12 @@
-// Configuração Supabase
-const SUPABASE_URL = "https://whidvijhqmudgzyylbfo.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_MHgrDJpm8wa4mGTJWPR0sg_08Bc9dut";
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// A conexão "supabaseClient" e as funções formatarMoeda/escapeHTML
+// agora vêm de scripts/config.js e scripts/common.js.
 
-const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
-if (!usuarioLogadoTexto) {
-  window.location.href = "login.html";
-}
-
-// Formatação de Moeda
-function formatarMoeda(valor) {
-  return Number(valor).toLocaleString("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-}
+const sessaoImpressao = protegerRota();
 
 // Busca e carrega os dados
 async function carregarImpressao() {
+  if (!sessaoImpressao) return; // já redirecionou para login.html
+
   const parametrosUrl = new URLSearchParams(window.location.search);
   const idOrcamento = parametrosUrl.get("id");
 
@@ -67,9 +56,10 @@ async function carregarImpressao() {
   } else {
     let linhasHTML = "";
     itens.forEach(item => {
+      // MELHORIA (XSS): descrição do produto escapada antes do innerHTML.
       linhasHTML += `
             <tr>
-              <td>${item.produtos?.ds_produto || "Produto Removido"}</td>
+              <td>${escapeHTML(item.produtos?.ds_produto || "Produto Removido")}</td>
               <td>${item.qt_produto}</td>
               <td class="num">R$ ${formatarMoeda(item.vl_unitario)}</td>
               <td class="num">R$ ${formatarMoeda(item.vl_total)}</td>

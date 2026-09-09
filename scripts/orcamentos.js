@@ -1,13 +1,7 @@
-const SUPABASE_URL = "https://whidvijhqmudgzyylbfo.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_MHgrDJpm8wa4mGTJWPR0sg_08Bc9dut";
-
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// Extrai o código escondido no formato "Nome (Código: 5)" que o datalist usa internamente
-function extrairCodigoDoTexto(texto) {
-  const match = String(texto || "").match(/\(Código:\s*(\d+)\)\s*$/);
-  return match ? match[1] : null;
-}
+// MELHORIA: extrairCodigoDoTexto, formatarMoeda, proteção de rota,
+// "forçar maiúsculas", escapeHTML e o botão "Voltar" agora vêm de
+// scripts/common.js. A conexão "supabaseClient" vem de scripts/config.js.
+// A função processarAprovacaoDeOrcamento vem de scripts/estoque.js.
 
 const TABELA_ORCAMENTO = "orcamentos";
 const TABELA_ITENS = "orcamento_item";
@@ -55,30 +49,12 @@ let itensDoOrcamento = [];
 let idOrcamentoEmEdicao = null;
 const botaoSalvarOrcamento = document.getElementById("botaoSalvarOrcamento");
 
-const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
-
-if (!usuarioLogadoTexto) {
-  window.location.href = "login.html";
-} else {
-  const usuarioLogado = JSON.parse(usuarioLogadoTexto);
-  const ehAdmin =
-    String(usuarioLogado.tipo_usuario).trim().toUpperCase() !== "PADRAO";
-  const usuarioPodeEditar = ehAdmin || usuarioLogado.pode_editar === true;
-
-  const parametrosUrl = new URLSearchParams(window.location.search);
-  const idAcesso = parametrosUrl.get("id");
-
-  if (idAcesso && !usuarioPodeEditar) {
-    alert("Você não tem permissão para visualizar ou editar registros.");
-    window.location.href = "menu.html";
-  }
-}
-
-function formatarMoeda(valor) {
-  return Number(valor).toLocaleString("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+// =====================================================
+// PROTEÇÃO DE ROTA E PERMISSÕES
+// =====================================================
+const sessaoOrcamento = protegerRota();
+if (sessaoOrcamento) {
+  bloquearEdicaoSemPermissao(sessaoOrcamento.podeEditar);
 }
 
 // Converte o que foi digitado no campo de desconto (aceita "10", "10,5"
@@ -240,7 +216,6 @@ function recalcularValorTotalItem() {
   valorTotalItemInput.value = "R$ " + formatarMoeda(quantidade * produto.valor);
 }
 
-
 qtdeProdutoOrcInput.addEventListener("input", recalcularValorTotalItem);
 
 btnAdicionarItem.addEventListener("click", function () {
@@ -287,9 +262,11 @@ function desenharListaDeItens() {
     let linhasHTML = "";
 
     itensDoOrcamento.forEach((item, indice) => {
+      // MELHORIA (XSS): a descrição do produto é escapada antes de
+      // entrar no innerHTML.
       linhasHTML += `
         <tr>
-          <td>${item.descricao_produto}</td>
+          <td>${escapeHTML(item.descricao_produto)}</td>
           <td>${item.quantidade}</td>
           <td>R$ ${formatarMoeda(item.valor_unitario)}</td>
           <td>R$ ${formatarMoeda(item.valor_total_item)}</td>
@@ -336,10 +313,10 @@ formOrcamento.addEventListener("submit", async function (evento) {
     return;
   }
 
-  // ALTERAÇÃO (item 4): não deixa salvar um orçamento sem nenhum item.
-  // Sem essa checagem, dava para clicar em "Salvar" com a lista de itens
-  // vazia e o orçamento era criado com valor total R$ 0,00, o que não
-  // faz sentido comercialmente.
+  // Não deixa salvar um orçamento sem nenhum item. Sem essa checagem,
+  // dava para clicar em "Salvar" com a lista de itens vazia e o
+  // orçamento era criado com valor total R$ 0,00, o que não faz
+  // sentido comercialmente.
   if (itensDoOrcamento.length === 0) {
     mensagem.textContent =
       "Adicione pelo menos um item ao orçamento antes de salvar.";
@@ -359,6 +336,9 @@ formOrcamento.addEventListener("submit", async function (evento) {
   const percentualDescontoAtual = converterPercentualParaNumero(
     descontoOrcamentoInput.value,
   );
+
+  // MELHORIA: trava o botão de salvar durante o envio.
+  botaoSalvarOrcamento.disabled = true;
 
   // =====================================================
   // FLUXO DE ATUALIZAÇÃO (quando o orçamento já existe)
@@ -383,6 +363,7 @@ formOrcamento.addEventListener("submit", async function (evento) {
         "Erro ao atualizar orçamento: " + erroOrcamento.message;
       mensagem.className = "erro";
       console.error(erroOrcamento);
+      botaoSalvarOrcamento.disabled = false;
       return;
     }
 
@@ -399,6 +380,7 @@ formOrcamento.addEventListener("submit", async function (evento) {
         erroExclusaoItens.message;
       mensagem.className = "erro";
       console.error(erroExclusaoItens);
+      botaoSalvarOrcamento.disabled = false;
       return;
     }
 
@@ -421,10 +403,12 @@ formOrcamento.addEventListener("submit", async function (evento) {
           erroItens.message;
         mensagem.className = "erro";
         console.error(erroItens);
+        botaoSalvarOrcamento.disabled = false;
         return;
       }
     }
 
+    botaoSalvarOrcamento.disabled = false;
     mensagem.textContent = "Orçamento atualizado com sucesso!";
     mensagem.className = "sucesso";
 
@@ -458,6 +442,7 @@ formOrcamento.addEventListener("submit", async function (evento) {
     mensagem.textContent = "Erro ao salvar orçamento: " + erroOrcamento.message;
     mensagem.className = "erro";
     console.error(erroOrcamento);
+    botaoSalvarOrcamento.disabled = false;
     return;
   }
 
@@ -472,6 +457,8 @@ formOrcamento.addEventListener("submit", async function (evento) {
   const { error: erroItens } = await supabaseClient
     .from(TABELA_ITENS)
     .insert(itensParaSalvar);
+
+  botaoSalvarOrcamento.disabled = false;
 
   if (erroItens) {
     mensagem.textContent =
@@ -547,7 +534,7 @@ async function carregarOrcamentoParaVisualizacao(idOrcamento) {
         .map(
           (item) => `
         <tr>
-          <td>${item.produtos?.ds_produto ?? ""}</td>
+          <td>${escapeHTML(item.produtos?.ds_produto ?? "")}</td>
           <td>${item.qt_produto}</td>
           <td>R$ ${formatarMoeda(item.vl_unitario)}</td>
           <td>R$ ${formatarMoeda(item.vl_total)}</td>
@@ -657,9 +644,12 @@ async function carregarOrcamentoParaEdicao(idOrcamento) {
 }
 
 async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
+  btnAprovarOrcamento.disabled = true;
+  btnReprovarOrcamento.disabled = true;
+
   if (novoStatus === "APROVADO") {
-    // ALTERAÇÃO (itens 3 e 6): a checagem de estoque e a baixa agora
-    // vêm de uma função compartilhada, em scripts/estoque.js.
+    // A checagem de estoque e a baixa vêm de uma função compartilhada,
+    // em scripts/estoque.js, já protegida contra concorrência.
     const resultado = await processarAprovacaoDeOrcamento(
       supabaseClient,
       idOrcamento,
@@ -668,13 +658,13 @@ async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
     if (!resultado.sucesso) {
       mensagem.textContent = resultado.mensagem;
       mensagem.className = "erro";
+      btnAprovarOrcamento.disabled = false;
+      btnReprovarOrcamento.disabled = false;
       return;
     }
   }
 
   const { error } = await supabaseClient
-
-
     .from(TABELA_ORCAMENTO)
     .update({ status_orcamento: novoStatus })
     .eq("orcamentoid", idOrcamento);
@@ -684,6 +674,8 @@ async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
       "Erro ao atualizar o status do orçamento: " + error.message;
     mensagem.className = "erro";
     console.error(error);
+    btnAprovarOrcamento.disabled = false;
+    btnReprovarOrcamento.disabled = false;
     return;
   }
 
@@ -734,36 +726,3 @@ if (idOrcamentoParaAcessar && modoAcesso === "editar") {
   carregarClientes();
   carregarProdutos();
 }
-
-document.addEventListener("DOMContentLoaded", function () {
-  const camposTexto = document.querySelectorAll('input[type="text"], textarea');
-
-  camposTexto.forEach((campo) => {
-    campo.addEventListener("input", function () {
-      const inicioCursor = this.selectionStart;
-      const fimCursor = this.selectionEnd;
-      this.value = this.value.toUpperCase();
-      this.setSelectionRange(inicioCursor, fimCursor);
-    });
-  });
-});
-/*
-  =====================================================
-  BOTÕES VOLTAR: FECHAM A ABA EM VEZ DE NAVEGAR
-  =====================================================
-*/
-function voltarFechandoAba() {
-  window.close();
-
-  setTimeout(() => {
-    window.location.href = "menu.html";
-  }, 300);
-}
-
-document
-  .getElementById("botaoVoltarForm")
-  ?.addEventListener("click", voltarFechandoAba);
-
-document
-  .getElementById("botaoVoltarVis")
-  ?.addEventListener("click", voltarFechandoAba);

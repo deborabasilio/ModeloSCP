@@ -1,25 +1,23 @@
-// Dados do projeto Supabase usados para acessar o banco de dados.
-const SUPABASE_URL = "https://whidvijhqmudgzyylbfo.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_MHgrDJpm8wa4mGTJWPR0sg_08Bc9dut";
+// A conexão "supabaseClient" agora vem de scripts/config.js, que
+// precisa ser incluído no HTML antes deste arquivo.
 
-// Cria a conexão que será usada para consultar a tabela e autenticar.
-const supabaseClient = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
-
-// Pegamos os elementos da página. 
+// Pegamos os elementos da página.
 // O campo userNome agora será usado para digitar o E-MAIL.
 const formUser = document.querySelector('#formUser');
 const tipoUser = document.querySelector('#tipoUser');
-const userNome = document.querySelector('#UserNome'); 
+const userNome = document.querySelector('#UserNome');
 const userSenha = document.querySelector('#UserSenha');
 const mensagem = document.querySelector('#mensagem');
+const botaoEntrar = formUser.querySelector('button[type="submit"]');
 
 formUser.addEventListener('submit', async function (evento) {
   // Impede o recarregamento da página ao enviar o formulário.
   evento.preventDefault();
 
+  // MELHORIA: trava o botão durante a autenticação, para evitar que o
+  // usuário clique várias vezes seguidas (o que disparava vários
+  // logins/consultas ao mesmo tempo).
+  botaoEntrar.disabled = true;
   mensagem.textContent = 'Autenticando...';
   mensagem.className = '';
 
@@ -36,6 +34,7 @@ formUser.addEventListener('submit', async function (evento) {
     mensagem.textContent = 'E-mail ou senha inválidos.';
     mensagem.className = 'erro';
     console.error(authError);
+    botaoEntrar.disabled = false;
     return;
   }
 
@@ -53,6 +52,8 @@ formUser.addEventListener('submit', async function (evento) {
     mensagem.textContent = 'Erro ao buscar permissões do usuário.';
     mensagem.className = 'erro';
     console.error(dbError);
+    await supabaseClient.auth.signOut();
+    botaoEntrar.disabled = false;
     return;
   }
 
@@ -61,10 +62,15 @@ formUser.addEventListener('submit', async function (evento) {
     await supabaseClient.auth.signOut(); // Desloga por segurança
     mensagem.textContent = 'Acesso não autorizado para este perfil.';
     mensagem.className = 'erro';
+    botaoEntrar.disabled = false;
     return;
   }
 
-  // Guarda os dados de perfil no navegador (incluindo as permissões)
+  // Guarda os dados de perfil no navegador (incluindo as permissões).
+  // Isso é só para a INTERFACE decidir o que mostrar (botões, menus).
+  // A segurança de verdade continua sendo garantida pelas políticas de
+  // RLS no Supabase, que usam a sessão de autenticação real (authData),
+  // e não este objeto salvo no navegador.
   localStorage.setItem('usuarioLogado', JSON.stringify(usuarioEncontrado));
 
   mensagem.textContent = 'Login realizado com sucesso!';

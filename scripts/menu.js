@@ -2,20 +2,12 @@ document.addEventListener("DOMContentLoaded", function () {
   // ==========================================
   // 0. VERIFICA SE O USUÁRIO ESTÁ LOGADO E QUAL É O TIPO DE ACESSO
   // ==========================================
-  const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
-
-  if (!usuarioLogadoTexto) {
-    window.location.href = "login.html";
-    return;
-  }
-
-  const usuarioLogado = JSON.parse(usuarioLogadoTexto);
-  const tipoUsuarioLogado = String(usuarioLogado.tipo_usuario || "")
-    .trim()
-    .toUpperCase();
-  const ehAdmin = tipoUsuarioLogado !== "PADRAO";
-  const usuarioPodeEditar = ehAdmin || usuarioLogado.pode_editar === true;
-  const usuarioPodeExcluir = ehAdmin || usuarioLogado.pode_excluir === true;
+  // MELHORIA: essa checagem (antes copiada em cada arquivo de script)
+  // agora vem de scripts/common.js -> protegerRota().
+  const sessao = protegerRota();
+  if (!sessao) return; // já redirecionou para login.html
+  const usuarioPodeEditar = sessao.podeEditar;
+  const usuarioPodeExcluir = sessao.podeExcluir;
 
   // ==========================================
   // 1. ABRIR E FECHAR OS SUBMENUS (DROPDOWNS)
@@ -55,15 +47,10 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // ==========================================
-  // 2. CONFIGURAÇÃO DO SUPABASE E VARIÁVEIS GLOBAIS
+  // 2. VARIÁVEIS GLOBAIS DA TELA
   // ==========================================
-  const SUPABASE_URL = "https://whidvijhqmudgzyylbfo.supabase.co";
-  const SUPABASE_ANON_KEY = "sb_publishable_MHgrDJpm8wa4mGTJWPR0sg_08Bc9dut";
-
-  window.supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY,
-  );
+  // MELHORIA: a conexão com o Supabase agora vem de scripts/config.js
+  // (window.supabaseClient), então não precisa mais ser recriada aqui.
 
   let tabelaAtual = "";
   let queryAtual = "*";
@@ -117,7 +104,7 @@ document.addEventListener("DOMContentLoaded", function () {
     tbody.innerHTML =
       '<tr><td colspan="10">Buscando dados no servidor...</td></tr>';
 
-    let requisicao = window.supabaseClient.from(nomeTabela).select(query);
+    let requisicao = supabaseClient.from(nomeTabela).select(query);
 
     if (filtro && filtro.valor) {
       let nomeColunaReal = filtro.coluna.split(":")[1] || filtro.coluna;
@@ -170,7 +157,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const { data, error } = await requisicao;
 
     if (error) {
-      tbody.innerHTML = `<tr><td colspan="10" style="color:red;">Erro ao buscar dados: ${error.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" style="color:red;">Erro ao buscar dados: ${escapeHTML(error.message)}</td></tr>`;
       console.error(error);
       return;
     }
@@ -191,14 +178,14 @@ document.addEventListener("DOMContentLoaded", function () {
         let queryArray = query.split(",").map((item) => item.trim());
         let colunaOriginal =
           queryArray.find((q) => q.startsWith(coluna + ":")) || coluna;
-        selectColuna.innerHTML += `<option value="${colunaOriginal}">${nomeFormatado}</option>`;
+        selectColuna.innerHTML += `<option value="${escapeHTML(colunaOriginal)}">${escapeHTML(nomeFormatado)}</option>`;
       });
     }
 
     let headHTML = "<tr>";
     colunas.forEach((coluna) => {
       const nomeFormatado = coluna.replace(/_/g, " ").toUpperCase();
-      headHTML += `<th>${nomeFormatado}</th>`;
+      headHTML += `<th>${escapeHTML(nomeFormatado)}</th>`;
     });
     headHTML += "<th>AÇÕES</th></tr>";
     thead.innerHTML = headHTML;
@@ -212,7 +199,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const idOrcamentoRelacionado =
         nomeTabela === "faturamentos" ? linha["Orçamento"] : "";
 
-      bodyHTML += `<tr data-id="${idRegistro}" data-orc-id="${idOrcamentoRelacionado}">`;
+      bodyHTML += `<tr data-id="${escapeHTML(idRegistro)}" data-orc-id="${escapeHTML(idOrcamentoRelacionado)}">`;
       colunas.forEach((coluna) => {
         let valor = linha[coluna];
 
@@ -225,21 +212,28 @@ document.addEventListener("DOMContentLoaded", function () {
           if (valor === "J" || valor === "j") valor = "Jurídico";
         }
 
+        // MELHORIA (XSS): antes o valor vindo do banco era jogado direto
+        // no HTML. Agora ele passa por escapeHTML() antes de qualquer
+        // formatação, então mesmo que alguém tenha cadastrado um nome
+        // de cliente/produto com caracteres de HTML, isso é exibido como
+        // texto puro, e não interpretado pelo navegador.
+        let valorExibicao = escapeHTML(valor);
+
         if (coluna === "Status") {
           const statusTexto = String(valor).toUpperCase();
           if (statusTexto === "ATIVO" || statusTexto === "APROVADO") {
-            valor = `<span style="color: green; font-weight: bold;">${valor}</span>`;
+            valorExibicao = `<span style="color: green; font-weight: bold;">${valorExibicao}</span>`;
           } else if (statusTexto === "INATIVO" || statusTexto === "REPROVADO") {
-            valor = `<span style="color: red; font-weight: bold;">${valor}</span>`;
+            valorExibicao = `<span style="color: red; font-weight: bold;">${valorExibicao}</span>`;
           } else if (statusTexto === "PENDENTE") {
-            valor = `<span style="color: #b8860b; font-weight: bold;">${valor}</span>`;
+            valorExibicao = `<span style="color: #b8860b; font-weight: bold;">${valorExibicao}</span>`;
           }
         }
 
         if (coluna.toLowerCase().includes("data") && valor) {
           const dataObj = new Date(valor);
           if (!isNaN(dataObj.getTime())) {
-            valor =
+            valorExibicao =
               coluna === "Data_do_Orçamento"
                 ? dataObj.toLocaleString("pt-BR")
                 : dataObj.toLocaleDateString("pt-BR");
@@ -253,15 +247,10 @@ document.addEventListener("DOMContentLoaded", function () {
           valor !== "" &&
           !isNaN(Number(valor))
         ) {
-          valor =
-            "R$ " +
-            Number(valor).toLocaleString("pt-BR", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            });
+          valorExibicao = "R$ " + formatarMoeda(Number(valor));
         }
 
-        bodyHTML += `<td>${valor || ""}</td>`;
+        bodyHTML += `<td>${valorExibicao || ""}</td>`;
       });
 
       let itensAcao = "";
@@ -351,8 +340,10 @@ document.addEventListener("DOMContentLoaded", function () {
         );
         if (!confirmou) return;
 
+        botaoClicado.disabled = true;
+
         const colunaChave = CHAVE_DA_TABELA[tabelaAtual];
-        const { error } = await window.supabaseClient
+        const { error } = await supabaseClient
           .from(tabelaAtual)
           .delete()
           .eq(colunaChave, idRegistro);
@@ -360,6 +351,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (error) {
           alert("Erro ao excluir: " + error.message);
           console.error(error);
+          botaoClicado.disabled = false;
           return;
         }
 
@@ -372,7 +364,7 @@ document.addEventListener("DOMContentLoaded", function () {
           const idOrcamentoRelacionado = linhaClicada.dataset.orcId;
 
           if (idOrcamentoRelacionado) {
-            const { error: erroReverterStatus } = await window.supabaseClient
+            const { error: erroReverterStatus } = await supabaseClient
               .from("orcamentos")
               .update({ status_orcamento: "APROVADO" })
               .eq("orcamentoid", idOrcamentoRelacionado);
@@ -406,64 +398,33 @@ document.addEventListener("DOMContentLoaded", function () {
           ? "APROVADO"
           : "REPROVADO";
 
+        // MELHORIA: trava os dois botões enquanto a aprovação está sendo
+        // processada, evitando duplo clique disparar duas aprovações do
+        // mesmo orçamento ao mesmo tempo.
+        const linhaBotoes = botaoClicado.closest(".menu-acoes-dropdown");
+        linhaBotoes
+          ?.querySelectorAll("button")
+          .forEach((botao) => (botao.disabled = true));
+
         if (novoStatus === "APROVADO") {
-          const { data: itens } = await window.supabaseClient
-            .from("orcamento_item")
-            .select("produtoid, qt_produto")
-            .eq("orcamentoid", idRegistro);
+          // MELHORIA: a checagem de estoque insuficiente e a baixa em si
+          // agora vêm de uma função única e compartilhada, já protegida
+          // contra concorrência (ver scripts/estoque.js).
+          const resultado = await processarAprovacaoDeOrcamento(
+            supabaseClient,
+            idRegistro,
+          );
 
-          if (itens) {
-            // ALTERAÇÃO (item 3): mesma checagem de estoque insuficiente
-            // que foi feita em orcamentos.js, agora também aqui, já que
-            // esse é o outro lugar do sistema onde dá para aprovar um
-            // orçamento (a partir da listagem do menu).
-            const produtosComEstoqueInsuficiente = [];
-
-            for (let item of itens) {
-              const { data: produto } = await window.supabaseClient
-                .from("produtos")
-                .select("ds_produto, qt_estoque_produto")
-                .eq("produtoid", item.produtoid)
-                .single();
-
-              if (
-                produto &&
-                produto.qt_estoque_produto - item.qt_produto < 0
-              ) {
-                produtosComEstoqueInsuficiente.push(
-                  `${produto.ds_produto} (estoque atual: ${produto.qt_estoque_produto}, necessário: ${item.qt_produto})`,
-                );
-              }
-            }
-
-            if (produtosComEstoqueInsuficiente.length > 0) {
-              alert(
-                "Não é possível aprovar: estoque insuficiente para: " +
-                  produtosComEstoqueInsuficiente.join("; "),
-              );
-              return;
-            }
-
-            for (let item of itens) {
-              const { data: produto } = await window.supabaseClient
-                .from("produtos")
-                .select("qt_estoque_produto")
-                .eq("produtoid", item.produtoid)
-                .single();
-
-              if (produto) {
-                let novoEstoque = produto.qt_estoque_produto - item.qt_produto;
-
-                await window.supabaseClient
-                  .from("produtos")
-                  .update({ qt_estoque_produto: novoEstoque })
-                  .eq("produtoid", item.produtoid);
-              }
-            }
+          if (!resultado.sucesso) {
+            alert(resultado.mensagem);
+            linhaBotoes
+              ?.querySelectorAll("button")
+              .forEach((botao) => (botao.disabled = false));
+            return;
           }
         }
 
-        const { error } = await window.supabaseClient
+        const { error } = await supabaseClient
           .from("orcamentos")
           .update({ status_orcamento: novoStatus })
           .eq("orcamentoid", idRegistro);
@@ -471,6 +432,9 @@ document.addEventListener("DOMContentLoaded", function () {
         if (error) {
           alert("Erro ao atualizar o status do orçamento: " + error.message);
           console.error(error);
+          linhaBotoes
+            ?.querySelectorAll("button")
+            .forEach((botao) => (botao.disabled = false));
           return;
         }
 
@@ -564,7 +528,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .forEach((m) => m.classList.remove("mostrar-dropdown"));
 
     const { data: orcamentos, error: erroOrcamentos } =
-      await window.supabaseClient
+      await supabaseClient
         .from("orcamentos")
         .select("orcamentoid, status_orcamento");
 
@@ -603,8 +567,12 @@ document.addEventListener("DOMContentLoaded", function () {
   // ==========================================
   document
     .getElementById("btn-sair")
-    ?.addEventListener("click", function (event) {
+    ?.addEventListener("click", async function (event) {
       event.preventDefault();
+      // MELHORIA: agora também encerra a sessão real do Supabase Auth
+      // (antes só limpava o localStorage, mas a sessão do Auth em si
+      // continuava válida/guardada pela biblioteca do Supabase).
+      await supabaseClient.auth.signOut();
       localStorage.removeItem("usuarioLogado");
       sessionStorage.removeItem("usuarioLogado");
       window.location.href = "login.html";
@@ -644,20 +612,5 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 500);
       });
     }
-  });
-});
-
-// =====================================================
-// 9. FORÇAR LETRAS MAIÚSCULAS NOS CAMPOS DE TEXTO
-// =====================================================
-document.addEventListener("DOMContentLoaded", function () {
-  const camposTexto = document.querySelectorAll('input[type="text"], textarea');
-  camposTexto.forEach((campo) => {
-    campo.addEventListener("input", function () {
-      const inicioCursor = this.selectionStart;
-      const fimCursor = this.selectionEnd;
-      this.value = this.value.toUpperCase();
-      this.setSelectionRange(inicioCursor, fimCursor);
-    });
   });
 });

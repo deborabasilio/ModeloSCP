@@ -1,15 +1,5 @@
 /*
   =====================================================
-  CONFIGURAÇÃO DO SUPABASE (igual às outras páginas)
-  =====================================================
-*/
-const SUPABASE_URL = "https://whidvijhqmudgzyylbfo.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_MHgrDJpm8wa4mGTJWPR0sg_08Bc9dut";
-
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/*
-  =====================================================
   PEGANDO OS ELEMENTOS DO HTML
   =====================================================
 */
@@ -23,22 +13,10 @@ const formaPagamentoFatSelect = document.getElementById("formaPagamentoFat");
 const obsFatInput = document.getElementById("obsFat");
 const mensagem = document.getElementById("mensagem");
 
-// Formata número para o padrão de dinheiro brasileiro (R$ 1.234,56)
-function formatarMoeda(valor) {
-  return Number(valor).toLocaleString("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
 // =====================================================
 // PROTEÇÃO DE ROTA: só entra quem estiver logado
 // =====================================================
-const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
-
-if (!usuarioLogadoTexto) {
-  window.location.href = "login.html";
-}
+const sessaoFaturamento = protegerRota();
 
 // =====================================================
 // LÊ O "?id=" DA URL (o botão "Faturar" da listagem manda
@@ -54,7 +32,7 @@ let valorOrcamentoCarregado = 0;
 if (!idOrcamento) {
   alert("Nenhum orçamento informado para faturamento.");
   window.close();
-} else {
+} else if (sessaoFaturamento) {
   carregarOrcamento(idOrcamento);
 }
 
@@ -108,6 +86,7 @@ formFaturamento.addEventListener("submit", async function (evento) {
   evento.preventDefault();
 
   const formaPagamento = formaPagamentoFatSelect.value;
+  const botaoEnviar = formFaturamento.querySelector("button[type=submit]");
 
   if (!formaPagamento) {
     mensagem.textContent = "Selecione a forma de pagamento.";
@@ -123,6 +102,10 @@ formFaturamento.addEventListener("submit", async function (evento) {
     observacao_faturamento: obsFatInput.value.trim() || null,
   };
 
+  // MELHORIA: trava o botão logo no início para evitar duplo clique
+  // gerando dois faturamentos para o mesmo orçamento.
+  botaoEnviar.disabled = true;
+
   // Passo 1: insere o registro na tabela "faturamentos"
   const { error: erroFaturamento } = await supabaseClient
     .from("faturamentos")
@@ -132,6 +115,7 @@ formFaturamento.addEventListener("submit", async function (evento) {
     mensagem.textContent = "Erro ao gerar faturamento: " + erroFaturamento.message;
     mensagem.className = "erro";
     console.error(erroFaturamento);
+    botaoEnviar.disabled = false;
     return;
   }
 
@@ -148,6 +132,8 @@ formFaturamento.addEventListener("submit", async function (evento) {
       erroOrcamento.message;
     mensagem.className = "erro";
     console.error(erroOrcamento);
+    // Propositalmente NÃO reabilitamos o botão aqui: o faturamento já
+    // foi gravado, então faturar de novo criaria um registro duplicado.
     return;
   }
 
@@ -156,35 +142,10 @@ formFaturamento.addEventListener("submit", async function (evento) {
 
   // Trava o formulário depois de faturar, já que não faz sentido
   // faturar o mesmo orçamento de novo na mesma tela.
-  formFaturamento.querySelector("button[type=submit]").disabled = true;
 });
 
 /*
   =====================================================
-  FORÇAR LETRAS MAIÚSCULAS NOS CAMPOS DE TEXTO
-  (igual às outras páginas do sistema)
+  BOTÃO VOLTAR: FECHA A ABA (vem de scripts/common.js)
   =====================================================
 */
-document.addEventListener("DOMContentLoaded", function () {
-  const camposTexto = document.querySelectorAll('input[type="text"], textarea');
-  camposTexto.forEach((campo) => {
-    campo.addEventListener("input", function () {
-      const inicioCursor = this.selectionStart;
-      const fimCursor = this.selectionEnd;
-      this.value = this.value.toUpperCase();
-      this.setSelectionRange(inicioCursor, fimCursor);
-    });
-  });
-});
-
-/*
-  =====================================================
-  BOTÃO VOLTAR: FECHA A ABA (igual às outras páginas)
-  =====================================================
-*/
-document.getElementById("botaoVoltarForm")?.addEventListener("click", function () {
-  window.close();
-  setTimeout(() => {
-    window.location.href = "menu.html";
-  }, 300);
-});
