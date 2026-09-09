@@ -55,6 +55,13 @@ let itensDoOrcamento = [];
 let idOrcamentoEmEdicao = null;
 const botaoSalvarOrcamento = document.getElementById("botaoSalvarOrcamento");
 
+// Controla se os botões de Aprovar/Reprovar continuam disponíveis mesmo
+// depois que o orçamento já foi finalizado (aprovado ou reprovado). Isso
+// só é liberado quando o usuário chega até aqui pelo "Editar" na listagem;
+// quem só clicou em "Visualizar" continua vendo os botões apenas enquanto
+// o orçamento está PENDENTE.
+let permitirAlterarStatusFinalizado = false;
+
 const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
 
 if (!usuarioLogadoTexto) {
@@ -487,7 +494,37 @@ formOrcamento.addEventListener("submit", async function (evento) {
   }, 5000);
 });
 
-async function carregarOrcamentoParaVisualizacao(idOrcamento) {
+// Mostra/esconde os botões de Aprovar e Reprovar de acordo com o status
+// atual do orçamento. Quando o orçamento está PENDENTE, mostra os dois.
+// Quando já foi finalizado (aprovado ou reprovado), só mostra os botões
+// se "permitirAlterarStatusFinalizado" estiver ligado (chegou aqui pelo
+// "Editar" — ver carregarOrcamentoParaEdicao) — e, nesse caso, mostra só
+// o botão da ação oposta à atual, para não repetir a mesma ação (e assim
+// dar baixa em estoque duas vezes, por exemplo).
+function atualizarBotoesAprovacao(status) {
+  if (status === "PENDENTE") {
+    visAcoesAprovacao.classList.remove("oculto");
+    btnAprovarOrcamento.classList.remove("oculto");
+    btnReprovarOrcamento.classList.remove("oculto");
+    return;
+  }
+
+  if (!permitirAlterarStatusFinalizado) {
+    visAcoesAprovacao.classList.add("oculto");
+    return;
+  }
+
+  visAcoesAprovacao.classList.remove("oculto");
+  btnAprovarOrcamento.classList.toggle("oculto", status === "APROVADO");
+  btnReprovarOrcamento.classList.toggle("oculto", status === "REPROVADO");
+}
+
+async function carregarOrcamentoParaVisualizacao(
+  idOrcamento,
+  permitirAlterarFinalizado = false,
+) {
+  permitirAlterarStatusFinalizado = permitirAlterarFinalizado;
+
   const { data: orcamento, error } = await supabaseClient
     .from(TABELA_ORCAMENTO)
     .select(
@@ -546,11 +583,7 @@ async function carregarOrcamentoParaVisualizacao(idOrcamento) {
           )
           .join("");
 
-  if (orcamento.status_orcamento === "PENDENTE") {
-    visAcoesAprovacao.classList.remove("oculto");
-  } else {
-    visAcoesAprovacao.classList.add("oculto");
-  }
+  atualizarBotoesAprovacao(orcamento.status_orcamento);
 }
 
 async function carregarOrcamentoParaEdicao(idOrcamento) {
@@ -582,14 +615,18 @@ async function carregarOrcamentoParaEdicao(idOrcamento) {
     return;
   }
 
-  // Só faz sentido editar orçamentos ainda pendentes: um orçamento já
-  // finalizado já baixou estoque, e um reprovado já foi encerrado.
+  // Só faz sentido editar os ITENS de orçamentos ainda pendentes: um
+  // orçamento já aprovado já baixou estoque, e um reprovado já foi
+  // encerrado. Nesses casos abrimos direto em modo de visualização (sem
+  // pop-up bloqueando a tela), com os botões de Aprovar/Reprovar
+  // liberados para o usuário poder corrigir o status caso ele tenha sido
+  // definido por engano.
   if (orcamento.status_orcamento !== "PENDENTE") {
-    alert(
-      "Somente orçamentos com status PENDENTE podem ser editados. Abrindo em modo de visualização.",
-    );
     document.documentElement.classList.remove("carregando-edicao");
-    carregarOrcamentoParaVisualizacao(idOrcamento);
+    await carregarOrcamentoParaVisualizacao(idOrcamento, true);
+
+    mensagem.textContent = `Este orçamento já está ${orcamento.status_orcamento}. Somente os itens de orçamentos PENDENTES podem ser editados, mas você pode alterar o status abaixo, se necessário.`;
+    mensagem.className = "";
     return;
   }
 
@@ -647,7 +684,14 @@ async function carregarOrcamentoParaEdicao(idOrcamento) {
 }
 
 async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
-  if (novoStatus === "APROVADO") {
+  // Guarda o status que estava em tela antes desta ação — é o que decide
+  // se precisamos baixar ou devolver estoque (ex.: reprovar um orçamento
+  // que já estava APROVADO deve devolver ao estoque o que foi baixado).
+  const statusAnterior = visStatus.textContent;
+
+  // Só baixa o estoque se ainda não estava aprovado, evitando baixa dupla
+  // caso a função seja chamada com o orçamento já aprovado.
+  if (novoStatus === "APROVADO" && statusAnterior !== "APROVADO") {
     const { data: itens } = await supabaseClient
       .from("orcamento_item")
       .select("produtoid, qt_produto")
@@ -663,6 +707,35 @@ async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
 
         if (produto && produto.qt_estoque_produto !== undefined) {
           let novoEstoque = produto.qt_estoque_produto - item.qt_produto;
+
+          await supabaseClient
+            .from(TABELA_PRODUTOS)
+            .update({ qt_estoque_produto: novoEstoque })
+            .eq("produtoid", item.produtoid);
+        }
+      }
+    }
+  }
+
+  // Se o orçamento estava APROVADO e agora está sendo reprovado (correção
+  // de um status definido por engano), devolve ao estoque a quantidade
+  // que tinha sido baixada na aprovação anterior.
+  if (novoStatus === "REPROVADO" && statusAnterior === "APROVADO") {
+    const { data: itens } = await supabaseClient
+      .from("orcamento_item")
+      .select("produtoid, qt_produto")
+      .eq("orcamentoid", idOrcamento);
+
+    if (itens) {
+      for (let item of itens) {
+        const { data: produto } = await supabaseClient
+          .from(TABELA_PRODUTOS)
+          .select("qt_estoque_produto")
+          .eq("produtoid", item.produtoid)
+          .single();
+
+        if (produto && produto.qt_estoque_produto !== undefined) {
+          let novoEstoque = produto.qt_estoque_produto + item.qt_produto;
 
           await supabaseClient
             .from(TABELA_PRODUTOS)
@@ -689,11 +762,13 @@ async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
   mensagem.textContent =
     novoStatus === "APROVADO"
       ? "Orçamento aprovado e estoque atualizado com sucesso!"
-      : "Orçamento reprovado.";
+      : statusAnterior === "APROVADO"
+        ? "Orçamento reprovado e estoque devolvido com sucesso!"
+        : "Orçamento reprovado.";
   mensagem.className = "sucesso";
 
   visStatus.textContent = novoStatus;
-  visAcoesAprovacao.classList.add("oculto");
+  atualizarBotoesAprovacao(novoStatus);
 
   setTimeout(() => {
     mensagem.textContent = "";

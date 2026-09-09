@@ -239,7 +239,6 @@ body {
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
   border-radius: 12px;
-  overflow: hidden;
 }
 
 .tabela-clientes th,

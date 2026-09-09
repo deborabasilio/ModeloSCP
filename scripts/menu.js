@@ -297,10 +297,10 @@ document.addEventListener("DOMContentLoaded", function () {
         if (PAGINA_DA_TABELA[nomeTabela]) {
           itensAcao +=
             '<button type="button" class="btn-editar">Editar</button>';
+        }
 
-          if (nomeTabela === "faturamentos") {
-            itensAcao += `<button type="button" class="btn-nota-fiscal">Simular Nota Fiscal</button>`;
-          }
+        if (nomeTabela === "faturamentos") {
+          itensAcao += `<button type="button" class="btn-nota-fiscal">Simular Nota Fiscal</button>`;
         }
 
         if (nomeTabela === "orcamentos" && linha.Status === "PENDENTE") {
@@ -395,6 +395,30 @@ document.addEventListener("DOMContentLoaded", function () {
           alert("Erro ao excluir: " + error.message);
           console.error(error);
           return;
+        }
+
+        // Excluir um faturamento não pode deixar o orçamento "preso" no
+        // status FATURADO sem nenhum faturamento de verdade vinculado a
+        // ele. Por isso, ao excluir um faturamento, devolvemos o
+        // orçamento relacionado para o status APROVADO, para que ele
+        // possa ser faturado novamente depois.
+        if (tabelaAtual === "faturamentos") {
+          const idOrcamentoRelacionado = linhaClicada.dataset.orcId;
+
+          if (idOrcamentoRelacionado) {
+            const { error: erroReverterStatus } = await window.supabaseClient
+              .from("orcamentos")
+              .update({ status_orcamento: "APROVADO" })
+              .eq("orcamentoid", idOrcamentoRelacionado);
+
+            if (erroReverterStatus) {
+              alert(
+                "Faturamento excluído, mas houve um erro ao devolver o orçamento para o status APROVADO: " +
+                erroReverterStatus.message,
+              );
+              console.error(erroReverterStatus);
+            }
+          }
         }
 
         linhaClicada.remove();
