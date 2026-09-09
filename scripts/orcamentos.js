@@ -54,9 +54,7 @@ const botaoSalvarOrcamento = document.getElementById("botaoSalvarOrcamento");
 // =====================================================
 const sessaoOrcamento = protegerRota();
 if (sessaoOrcamento) {
-  // Um orçamento pode ser visualizado por quem só tem consulta; a permissão
-  // de edição é exigida apenas quando a URL pede explicitamente modo=editar.
-  bloquearEdicaoSemPermissao(sessaoOrcamento.podeEditar, true);
+  bloquearEdicaoSemPermissao(sessaoOrcamento.podeEditar);
 }
 
 // Converte o que foi digitado no campo de desconto (aceita "10", "10,5"
@@ -101,11 +99,17 @@ descontoOrcamentoInput.addEventListener("input", recalcularValorFinalOrcamento);
 dataOrcamentoInput.value = new Date().toLocaleString("pt-BR");
 
 async function mostrarProximoCodigo() {
-  await mostrarProximoCodigoNoCampo(
-    TABELA_ORCAMENTO,
-    "orcamentoid",
-    codigoOrcamentoInput,
-  );
+  const { count, error } = await supabaseClient
+    .from(TABELA_ORCAMENTO)
+    .select("*", { count: "exact", head: true });
+
+  if (error) {
+    codigoOrcamentoInput.value = "";
+    console.error(error);
+    return;
+  }
+
+  codigoOrcamentoInput.value = (count ?? 0) + 1;
 }
 
 async function carregarClientes() {
@@ -539,7 +543,7 @@ async function carregarOrcamentoParaVisualizacao(idOrcamento) {
         )
         .join("");
 
-  if (orcamento.status_orcamento === "PENDENTE" && sessaoOrcamento?.podeEditar) {
+  if (orcamento.status_orcamento === "PENDENTE") {
     visAcoesAprovacao.classList.remove("oculto");
   } else {
     visAcoesAprovacao.classList.add("oculto");
@@ -643,22 +647,10 @@ async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
   btnAprovarOrcamento.disabled = true;
   btnReprovarOrcamento.disabled = true;
 
-  if (novoStatus === "APROVADO") {
-    // A checagem de estoque e a baixa vêm de uma função compartilhada,
-    // em scripts/estoque.js, já protegida contra concorrência.
-    const resultado = await processarAprovacaoDeOrcamento(
-      supabaseClient,
-      idOrcamento,
-    );
-
-    if (!resultado.sucesso) {
-      mensagem.textContent = resultado.mensagem;
-      mensagem.className = "erro";
-      btnAprovarOrcamento.disabled = false;
-      btnReprovarOrcamento.disabled = false;
-      return;
-    }
-  }
+  // A checagem de estoque e a baixa NÃO acontecem mais aqui na aprovação.
+  // Agora elas só acontecem no momento do faturamento (ver
+  // scripts/faturamento.js), então aprovar um orçamento só muda o status
+  // dele, sem mexer no estoque dos produtos.
 
   const { error } = await supabaseClient
     .from(TABELA_ORCAMENTO)
@@ -677,7 +669,7 @@ async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
 
   mensagem.textContent =
     novoStatus === "APROVADO"
-      ? "Orçamento aprovado e estoque atualizado com sucesso!"
+      ? "Orçamento aprovado com sucesso!"
       : "Orçamento reprovado.";
   mensagem.className = "sucesso";
 

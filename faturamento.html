@@ -12,7 +12,7 @@
 
   <header class="page-header">
     <h1 id="tituloPagina">Faturar Orçamento</h1>
-    <p id="descricaoPagina">Confirme os dados para gerar o faturamento e a nota fiscal simulada.</p>
+    <p id="descricaoPagina">Confirme os dados para gerar o faturamento.</p>
   </header>
 
   <form id="formFaturamento">
@@ -30,7 +30,7 @@
     <input type="text" id="dataFat" readonly />
 
     <label for="notaFiscalFat">Número da Nota Fiscal:</label>
-    <input type="text" id="notaFiscalFat" placeholder="Gerado automaticamente" readonly>
+    <input type="text" id="notaFiscalFat" placeholder="Opcional">
 
     <label for="formaPagamentoFat">Forma de Pagamento:</label>
     <select id="formaPagamentoFat" required>
@@ -45,16 +45,17 @@
     <label for="obsFat">Observação:</label>
     <textarea id="obsFat"></textarea>
 
-    <button type="submit" id="botao">Gerar Nota Fiscal</button>
+    <button type="submit" id="botao">Confirmar Faturamento</button>
     <button type="button" id="botaoVoltarForm">Voltar</button>
 
   </form>
 
-  <p id="mensagem" aria-live="polite"></p>
+  <p id="mensagem"></p>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="scripts/config.js"></script>
   <script src="scripts/common.js"></script>
+  <script src="scripts/estoque.js"></script>
   <script src="scripts/faturamento.js"></script>
 
 </body>

@@ -78,26 +78,6 @@ document.addEventListener("DOMContentLoaded", function () {
     areaPesquisaEl.style.display = nomeArea === "pesquisa" ? "block" : "none";
   }
 
-  function preencherColunasDoFiltro(selectColuna, colunas, query) {
-    if (!selectColuna) return;
-
-    const valorSelecionado = selectColuna.value;
-    const camposDaConsulta = query.split(",").map((campo) => campo.trim());
-
-    selectColuna.innerHTML = '<option value="">Selecione a coluna...</option>';
-    colunas.forEach((coluna) => {
-      const nomeFormatado = coluna.replace(/_/g, " ").toUpperCase();
-      const colunaOriginal =
-        camposDaConsulta.find((campo) => campo.startsWith(coluna + ":")) || coluna;
-
-      selectColuna.innerHTML += `<option value="${escapeHTML(colunaOriginal)}">${escapeHTML(nomeFormatado)}</option>`;
-    });
-
-    if (valorSelecionado) {
-      selectColuna.value = valorSelecionado;
-    }
-  }
-
   // ==========================================
   // 3. FUNÇÃO PARA BUSCAR E EXIBIR DADOS (PESQUISA)
   // ==========================================
@@ -190,7 +170,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const colunas = Object.keys(data[0]);
 
-    preencherColunasDoFiltro(selectColuna, colunas, query);
+    if (selectColuna && !filtro) {
+      selectColuna.innerHTML =
+        '<option value="">Selecione a coluna...</option>';
+      colunas.forEach((coluna) => {
+        const nomeFormatado = coluna.replace(/_/g, " ").toUpperCase();
+        let queryArray = query.split(",").map((item) => item.trim());
+        let colunaOriginal =
+          queryArray.find((q) => q.startsWith(coluna + ":")) || coluna;
+        selectColuna.innerHTML += `<option value="${escapeHTML(colunaOriginal)}">${escapeHTML(nomeFormatado)}</option>`;
+      });
+    }
 
     let headHTML = "<tr>";
     colunas.forEach((coluna) => {
@@ -265,24 +255,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
       let itensAcao = "";
 
-      // A aprovação fica concentrada na tela de detalhes do orçamento.
-      // Assim não há dois lugares diferentes alterando o mesmo status.
-      if (nomeTabela === "orcamentos") {
-        itensAcao += '<button type="button" class="btn-visualizar">Visualizar</button>';
-      }
-
-      // Gerar/abrir o documento não muda dados; portanto quem pode consultar
-      // faturamentos também pode obter seu PDF.
-      if (nomeTabela === "faturamentos") {
-        itensAcao += '<button type="button" class="btn-nota-fiscal">Gerar Nota Fiscal</button>';
-      }
-
       if (usuarioPodeEditar) {
         if (PAGINA_DA_TABELA[nomeTabela]) {
           itensAcao +=
             '<button type="button" class="btn-editar">Editar</button>';
         }
 
+        if (nomeTabela === "faturamentos") {
+          itensAcao += `<button type="button" class="btn-nota-fiscal">Simular Nota Fiscal</button>`;
+        }
+
+        if (nomeTabela === "orcamentos" && linha.Status === "PENDENTE") {
+          itensAcao += `<button type="button" class="btn-aprovar">Aprovar</button>`;
+          itensAcao += `<button type="button" class="btn-reprovar">Reprovar</button>`;
+        }
         if (nomeTabela === "orcamentos" && linha.Status === "APROVADO") {
           itensAcao += `<button type="button" class="btn-faturar">Faturar</button>`;
         }
@@ -305,7 +291,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ==========================================
-  // 3b. AÇÕES NA LISTAGEM: EDITAR, VISUALIZAR, FATURAR, EXCLUIR E GERAR PDF
+  // 3b. AÇÕES NA LISTAGEM: EDITAR, VISUALIZAR, EXCLUIR, APROVAR, REPROVAR, IMPRIMIR
   // ==========================================
   document
     .getElementById("tabela-corpo")
@@ -402,6 +388,48 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       if (botaoClicado.classList.contains("btn-nota-fiscal")) {
         window.open(`imprimir_nota_fiscal.html?id=${idRegistro}`, "_blank");
+        return;
+      }
+      if (
+        botaoClicado.classList.contains("btn-aprovar") ||
+        botaoClicado.classList.contains("btn-reprovar")
+      ) {
+        const novoStatus = botaoClicado.classList.contains("btn-aprovar")
+          ? "APROVADO"
+          : "REPROVADO";
+
+        // MELHORIA: trava os dois botões enquanto a aprovação está sendo
+        // processada, evitando duplo clique disparar duas aprovações do
+        // mesmo orçamento ao mesmo tempo.
+        const linhaBotoes = botaoClicado.closest(".menu-acoes-dropdown");
+        linhaBotoes
+          ?.querySelectorAll("button")
+          .forEach((botao) => (botao.disabled = true));
+
+        // A checagem de estoque e a baixa NÃO acontecem mais aqui na
+        // aprovação. Agora elas só acontecem no momento do faturamento
+        // (ver scripts/faturamento.js), então aprovar um orçamento só
+        // muda o status dele, sem mexer no estoque dos produtos.
+
+        const { error } = await supabaseClient
+          .from("orcamentos")
+          .update({ status_orcamento: novoStatus })
+          .eq("orcamentoid", idRegistro);
+
+        if (error) {
+          alert("Erro ao atualizar o status do orçamento: " + error.message);
+          console.error(error);
+          linhaBotoes
+            ?.querySelectorAll("button")
+            .forEach((botao) => (botao.disabled = false));
+          return;
+        }
+
+        buscarDados(
+          tabelaAtual,
+          document.getElementById("titulo-pesquisa").innerText,
+          queryAtual,
+        );
         return;
       }
     });
@@ -544,25 +572,31 @@ document.addEventListener("DOMContentLoaded", function () {
     verde: "APROVADO",
     amarelo: "PENDENTE",
     vermelho: "REPROVADO",
-    azul: "FATURADO",
   };
 
   Object.keys(cardsPainel).forEach((cor) => {
     const card = document.querySelector(`.painel-card.${cor}`);
     if (card) {
-      card.addEventListener("click", async () => {
+      card.addEventListener("click", () => {
+        mostrarArea("pesquisa");
         const query =
           "Código:orcamentoid, Data_do_Orçamento:dt_orcamento, Cliente:clientes(nome_cliente), Valor_Total:vl_total_orcamento, Data_de_Validade:dt_validade_orcamento, Status:status_orcamento";
 
-        await buscarDados("orcamentos", "Orçamentos " + cardsPainel[cor], query, {
+        buscarDados("orcamentos", "Orçamentos " + cardsPainel[cor], query, {
           coluna: "Status:status_orcamento",
           condicao: "igual",
           valor: cardsPainel[cor],
         });
 
-        document.getElementById("filtro-coluna").value = "Status:status_orcamento";
-        document.getElementById("filtro-condicao").value = "igual";
-        document.getElementById("filtro-valor").value = cardsPainel[cor];
+        setTimeout(() => {
+          const selectColuna = document.getElementById("filtro-coluna");
+          if (selectColuna && selectColuna.options.length <= 1) {
+            selectColuna.innerHTML += `<option value="Status:status_orcamento">STATUS</option>`;
+          }
+          if (selectColuna) selectColuna.value = "Status:status_orcamento";
+          document.getElementById("filtro-condicao").value = "igual";
+          document.getElementById("filtro-valor").value = cardsPainel[cor];
+        }, 500);
       });
     }
   });
