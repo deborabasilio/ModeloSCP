@@ -106,32 +106,65 @@ formFaturamento.addEventListener("submit", async function (evento) {
   // gerando dois faturamentos para o mesmo orçamento.
   botaoEnviar.disabled = true;
 
-  // Passo 1: checa e desconta o estoque dos produtos do orçamento. A
+  // MELHORIA (integridade de estoque / retry seguro): o registro de
+  // faturamento é criado ANTES da baixa de estoque, não depois. Ele
+  // funciona como o "recibo" que garante o invariante "existe um
+  // faturamento para este orçamento SE E SOMENTE SE o estoque dele já
+  // foi descontado". Se a baixa (passo 2) falhar, desfazemos esse
+  // insert (passo 2b) antes de liberar uma nova tentativa — assim uma
+  // nova tentativa sempre parte do zero (nada criado, nada descontado)
+  // e nunca desconta o mesmo estoque duas vezes.
+
+  // Passo 1: insere o registro na tabela "faturamentos"
+  const { data: faturamentoCriado, error: erroFaturamento } =
+    await supabaseClient
+      .from("faturamentos")
+      .insert(dadosFaturamento)
+      .select("faturamentoid")
+      .single();
+
+  if (erroFaturamento) {
+    mensagem.textContent = "Erro ao gerar faturamento: " + erroFaturamento.message;
+    mensagem.className = "erro";
+    console.error(erroFaturamento);
+    botaoEnviar.disabled = false; // nada foi criado, tentar de novo é seguro
+    return;
+  }
+
+  // Passo 2: checa e desconta o estoque dos produtos do orçamento. A
   // checagem e a baixa vêm de uma função compartilhada, em
-  // scripts/estoque.js, já protegida contra concorrência. É só aqui, no
-  // faturamento, que o estoque é mexido (a aprovação não mexe mais nele).
+  // scripts/estoque.js, já protegida contra concorrência.
   const resultadoEstoque = await processarAprovacaoDeOrcamento(
     supabaseClient,
     idOrcamento,
   );
 
   if (!resultadoEstoque.sucesso) {
+    // Passo 2b: a baixa falhou (ex.: estoque insuficiente ou conflito de
+    // concorrência) -> desfaz o faturamento criado no passo 1, para não
+    // deixar um registro de faturamento sem a baixa correspondente.
+    const { error: erroDesfazer } = await supabaseClient
+      .from("faturamentos")
+      .delete()
+      .eq("faturamentoid", faturamentoCriado.faturamentoid);
+
+    if (erroDesfazer) {
+      // Não conseguimos nem desfazer o insert: mais seguro travar o
+      // botão e pedir revisão manual do que arriscar duplicar o
+      // faturamento numa nova tentativa.
+      mensagem.textContent =
+        resultadoEstoque.mensagem +
+        " Além disso, não foi possível cancelar automaticamente o registro de faturamento já criado (erro: " +
+        erroDesfazer.message +
+        "). Avise um administrador antes de tentar faturar este orçamento de novo.";
+      mensagem.className = "erro";
+      console.error(erroDesfazer);
+      return; // botão continua travado de propósito
+    }
+
     mensagem.textContent = resultadoEstoque.mensagem;
     mensagem.className = "erro";
-    botaoEnviar.disabled = false;
-    return;
-  }
-
-  // Passo 2: insere o registro na tabela "faturamentos"
-  const { error: erroFaturamento } = await supabaseClient
-    .from("faturamentos")
-    .insert(dadosFaturamento);
-
-  if (erroFaturamento) {
-    mensagem.textContent = "Erro ao gerar faturamento: " + erroFaturamento.message;
-    mensagem.className = "erro";
-    console.error(erroFaturamento);
-    botaoEnviar.disabled = false;
+    botaoEnviar.disabled = false; // desfeito com sucesso, tentar de novo é seguro
     return;
   }
 

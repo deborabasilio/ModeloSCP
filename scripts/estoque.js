@@ -134,3 +134,91 @@ async function processarAprovacaoDeOrcamento(supabaseClientAtual, idOrcamento) {
 
   return { sucesso: true };
 }
+
+/*
+  =====================================================
+  FUNÇÃO COMPARTILHADA: DEVOLVER ESTOQUE (EXCLUSÃO DE FATURAMENTO)
+  =====================================================
+  Caminho inverso de processarAprovacaoDeOrcamento(): quando um
+  faturamento é excluído, o estoque que ele tinha descontado precisa
+  voltar. Sem isso, o orçamento related volta para APROVADO mas o
+  estoque continua descontado — se alguém faturar de novo, desconta
+  os mesmos itens uma segunda vez.
+
+  Recebe os mesmos parâmetros e devolve o mesmo formato de resultado
+  que processarAprovacaoDeOrcamento: { sucesso: true } ou
+  { sucesso: false, mensagem: "texto" }.
+
+  IMPORTANTE sobre quem chama essa função: ela deve ser chamada DEPOIS
+  de excluir o registro de faturamento e ANTES de reverter o status do
+  orçamento para APROVADO. Se ela falhar, quem chamou não deve permitir
+  uma nova tentativa (não reabilitar botão) — como o faturamento já foi
+  excluído nesse ponto, tentar de novo chamaria essa função outra vez e
+  devolveria o mesmo estoque em dobro.
+
+  Observação: por segurança, essa função NÃO reativa automaticamente
+  produtos que foram marcados INATIVO por terem zerado o estoque. Isso
+  evita reativar por engano um produto que, nesse meio-tempo, tenha
+  sido desativado por outro motivo (ex.: descontinuado). Se for o
+  caso, quem excluir o faturamento deve reativar o produto manualmente
+  na tela de Produtos.
+*/
+async function devolverEstoqueDoOrcamento(supabaseClientAtual, idOrcamento) {
+  const { data: itens, error: erroItens } = await supabaseClientAtual
+    .from("orcamento_item")
+    .select("produtoid, qt_produto")
+    .eq("orcamentoid", idOrcamento);
+
+  if (erroItens) {
+    return {
+      sucesso: false,
+      mensagem: "Erro ao verificar os itens do orçamento: " + erroItens.message,
+    };
+  }
+
+  if (!itens || itens.length === 0) {
+    return { sucesso: true };
+  }
+
+  // Assim como na baixa, usamos uma trava otimista no UPDATE (".eq" no
+  // valor antigo do estoque): só grava se ninguém mexeu no estoque
+  // desse produto entre a leitura e a escrita. Aqui isso é mais para
+  // detectar concorrência do que para impedir excesso (devolver
+  // estoque não tem como "faltar" estoque), mas evita que uma
+  // devolução pise em cima de uma alteração concorrente sem perceber.
+  const produtosComErro = [];
+
+  for (let item of itens) {
+    const { data: produto } = await supabaseClientAtual
+      .from("produtos")
+      .select("ds_produto, qt_estoque_produto")
+      .eq("produtoid", item.produtoid)
+      .single();
+
+    if (!produto || produto.qt_estoque_produto === undefined) continue;
+
+    const novoEstoque = produto.qt_estoque_produto + item.qt_produto;
+
+    const { data: linhasAtualizadas } = await supabaseClientAtual
+      .from("produtos")
+      .update({ qt_estoque_produto: novoEstoque })
+      .eq("produtoid", item.produtoid)
+      .eq("qt_estoque_produto", produto.qt_estoque_produto)
+      .select("produtoid");
+
+    if (!linhasAtualizadas || linhasAtualizadas.length === 0) {
+      produtosComErro.push(produto.ds_produto);
+    }
+  }
+
+  if (produtosComErro.length > 0) {
+    return {
+      sucesso: false,
+      mensagem:
+        "O estoque de alguns produtos mudou no exato momento da devolução (provavelmente outra operação aconteceu ao mesmo tempo). Confira e ajuste o estoque manualmente para: " +
+        produtosComErro.join("; "),
+    };
+  }
+
+  return { sucesso: true };
+}

@@ -364,6 +364,30 @@ document.addEventListener("DOMContentLoaded", function () {
           const idOrcamentoRelacionado = linhaClicada.dataset.orcId;
 
           if (idOrcamentoRelacionado) {
+            // MELHORIA (integridade de estoque): antes de devolver o
+            // orçamento para APROVADO, devolve o estoque que esse
+            // faturamento tinha descontado (ver scripts/estoque.js). Sem
+            // isso, o orçamento voltaria a ficar "faturável" com o
+            // estoque ainda descontado, e um novo faturamento descontaria
+            // os mesmos itens de novo.
+            const resultadoDevolucao = await devolverEstoqueDoOrcamento(
+              supabaseClient,
+              idOrcamentoRelacionado,
+            );
+
+            if (!resultadoDevolucao.sucesso) {
+              alert(
+                "Faturamento excluído, mas houve um erro ao devolver o estoque: " +
+                  resultadoDevolucao.mensagem +
+                  " Avise um administrador para conferir e corrigir o estoque manualmente antes de faturar este orçamento de novo.",
+              );
+              console.error(resultadoDevolucao.mensagem);
+              // Propositalmente NÃO seguimos para reverter o status nem
+              // reabilitamos o botão: o faturamento já foi excluído, então
+              // tentar de novo aqui devolveria o estoque em dobro.
+              return;
+            }
+
             const { error: erroReverterStatus } = await supabaseClient
               .from("orcamentos")
               .update({ status_orcamento: "APROVADO" })
@@ -371,7 +395,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (erroReverterStatus) {
               alert(
-                "Faturamento excluído, mas houve um erro ao devolver o orçamento para o status APROVADO: " +
+                "Faturamento excluído e estoque devolvido, mas houve um erro ao devolver o orçamento para o status APROVADO: " +
                   erroReverterStatus.message,
               );
               console.error(erroReverterStatus);
