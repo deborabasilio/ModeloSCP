@@ -1,14 +1,5 @@
-// =====================================================
 // FUNÇÕES COMPARTILHADAS ENTRE TODAS AS TELAS
-// =====================================================
-// Essas funções existiam repetidas (copiadas e coladas) em quase
-// todos os arquivos de scripts/: proteção de rota, formatação de
-// moeda, extração do código no datalist, "forçar maiúsculas" e o
-// botão "Voltar". Centralizar aqui significa que uma correção feita
-// uma vez vale para o sistema inteiro.
-//
-// Precisa ser incluído via <script>, depois de config.js e antes do
-// script específico de cada página.
+
 
 /*
   =====================================================
@@ -18,14 +9,6 @@
   existir, redireciona para o login. Se existir, devolve um objeto
   com o usuário e as permissões já calculadas (ehAdmin, podeEditar,
   podeExcluir), para a página usar como quiser.
-
-  ATENÇÃO: isso é apenas uma proteção de INTERFACE (evita mostrar
-  botões/telas para quem não deveria ver). A proteção de verdade tem
-  que estar nas políticas de RLS do Supabase, porque qualquer pessoa
-  com conhecimento técnico pode editar o localStorage do navegador
-  dela e "se dar" permissões de admin manualmente. Sem RLS correta
-  no banco, essa pessoa conseguiria gravar dados mesmo sem permissão
-  real — é o banco que precisa barrar isso, não o JavaScript.
 */
 function protegerRota() {
   const usuarioLogadoTexto = localStorage.getItem("usuarioLogado");
@@ -56,8 +39,7 @@ function protegerRota() {
 }
 
 // Usada nas telas de cadastro (produtos, clientes, categorias, orçamentos):
-// se a página foi aberta em modo edição ("?id=...") e o usuário não pode
-// editar, barra o acesso e manda de volta para o menu.
+// se a página foi aberta em modo edição ("?id=...") e o usuário não pode editar, barra o acesso e manda de volta para o menu.
 function bloquearEdicaoSemPermissao(podeEditar, exigirModoEdicao = false) {
   const parametros = new URLSearchParams(window.location.search);
   const idAcesso = parametros.get("id");
@@ -83,7 +65,7 @@ function formatarMoeda(valor) {
 
 /*
   Mostra uma estimativa do próximo ID para fins de interface. O banco continua
-  sendo a fonte de verdade e gera a chave definitiva ao salvar o registro.
+  sendo a fonte e gera a chave definitiva ao salvar o registro.
 */
 async function mostrarProximoCodigoNoCampo(tabela, colunaId, campo) {
   campo.value = "Buscando...";
@@ -110,8 +92,6 @@ async function mostrarProximoCodigoNoCampo(tabela, colunaId, campo) {
   =====================================================
   3. EXTRAIR O CÓDIGO ESCONDIDO NOS CAMPOS DE DATALIST
   =====================================================
-  Os campos de busca de cliente/produto/categoria mostram o texto no
-  formato "Nome (Código: 5)". Essa função pega só o número.
 */
 function extrairCodigoDoTexto(texto) {
   const match = String(texto || "").match(/\(Código:\s*(\d+)\)\s*$/);
@@ -122,16 +102,6 @@ function extrairCodigoDoTexto(texto) {
   =====================================================
   4. ESCAPE DE HTML (proteção contra XSS armazenado)
   =====================================================
-  Vários lugares do sistema montam HTML colocando dados que vieram do
-  banco (nome de cliente, descrição de produto etc.) direto dentro de
-  innerHTML usando template literals. Se algum desses textos tiver
-  caracteres como "<" ou ">" (por exemplo, alguém cadastra um produto
-  chamado "<b>teste</b>" ou, pior, uma tag <script>), o navegador
-  pode interpretar isso como HTML/JS de verdade na hora de exibir a
-  listagem para outro usuário — isso é o que se chama de "XSS
-  armazenado". Sempre que um valor vindo do banco for inserido via
-  innerHTML (e não via textContent, que já é seguro), ele deve passar
-  por esta função antes.
 */
 function escapeHTML(texto) {
   if (texto === null || texto === undefined) return "";
