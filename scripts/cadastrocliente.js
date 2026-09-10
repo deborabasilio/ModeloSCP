@@ -1,7 +1,7 @@
 /*
-  =====================================================
+  ==============================
   PEGANDO OS ELEMENTOS DO HTML
-  =====================================================
+  ==============================
 */
 const formCliente = document.getElementById("formCliente");
 const codigoClienteInput = document.getElementById("codigoCliente");
@@ -75,7 +75,6 @@ cpfCnpjClienteInput.placeholder = "Selecione o tipo primeiro";
 // =====================================================
 // PROTEÇÃO DE ROTA E PERMISSÕES
 // =====================================================
-// MELHORIA: vem de scripts/common.js agora, em vez de estar copiada aqui.
 const sessaoCliente = protegerRota();
 if (sessaoCliente) {
   bloquearEdicaoSemPermissao(sessaoCliente.podeEditar);
@@ -94,8 +93,6 @@ async function buscarProximoCodigo() {
   =====================================================
   FUNÇÃO PARA CARREGAR UM CLIENTE PARA EDIÇÃO
   =====================================================
-  Usada quando a página é aberta com "?id=5" na URL,
-  o que acontece ao clicar em "Editar" na listagem do menu.
 */
 async function carregarClienteNoFormulario(idCliente) {
   mensagem.textContent = "Carregando dados do cliente...";
@@ -118,11 +115,6 @@ async function carregarClienteNoFormulario(idCliente) {
   codigoClienteInput.value = cliente.clienteid;
   tipoClienteInput.value = cliente.tipo_cliente;
 
-  // O campo de CPF/CNPJ começa desabilitado (só libera quando o usuário
-  // troca o "Tipo de Cliente" manualmente, via evento "change"). Como aqui
-  // estamos preenchendo o tipo por código (sem o usuário mexer no select),
-  // esse evento nunca dispara e o campo ficava travado. Por isso liberamos
-  // e configuramos o campo manualmente, do mesmo jeito que o evento faria.
   cpfCnpjClienteInput.disabled = false;
   cpfCnpjClienteInput.placeholder =
     cliente.tipo_cliente === "F" ? "000.000.000-00" : "00.000.000/0000-00";
@@ -152,9 +144,9 @@ async function carregarClienteNoFormulario(idCliente) {
 }
 
 /*
-  =====================================================
+  ==================
   QUANDO A PÁGINA ABRE
-  =====================================================
+  ==================
 */
 const parametrosUrl = new URLSearchParams(window.location.search);
 const idClienteParaEditar = parametrosUrl.get("id");

@@ -1,7 +1,7 @@
 /*
-  =====================================================
+  ==============================
   PEGANDO OS ELEMENTOS DO HTML
-  =====================================================
+  ===============================
 */
 
 const formCategoria = document.getElementById("categoriaProdutos");
@@ -10,37 +10,28 @@ const descricaoCategoriaInput = document.getElementById("descricaoCategoria");
 const mensagem = document.getElementById("mensagem");
 const botaoSalvar = document.getElementById("botao");
 
-// Guarda o ID da categoria quando estamos editando (null = cadastro novo)
+// Guarda o ID da categoria quando esta editando (null = cadastro novo)
 let idCategoriaEmEdicao = null;
 
-// =====================================================
+// ================================
 // PROTEÇÃO DE ROTA E PERMISSÕES
-// =====================================================
+// ================================
 const sessaoCategoria = protegerRota();
 if (sessaoCategoria) {
   bloquearEdicaoSemPermissao(sessaoCategoria.podeEditar);
 }
 
 /*
-  =====================================================
+  ===========================
   NOME DA TABELA NO BANCO
-  =====================================================
-  IMPORTANTE: o nome abaixo precisa ser IGUAL ao nome
-  da tabela criada no Supabase. Aqui usamos o mesmo nome
-  que já aparece no menu.js ("categoria_produto").
-  Se a sua tabela tiver outro nome, troque aqui.
+  ===========================
 */
 const NOME_TABELA = "categoria_produto";
 
 /*
-  =====================================================
-  MOSTRAR O PRÓXIMO CÓDIGO (só um preview)
-  =====================================================
-  O código de verdade (a chave da tabela) quem gera é o
-  próprio banco de dados sozinho. Aqui a gente só faz uma
-  ESTIMATIVA de qual vai ser o próximo número, contando
-  quantas categorias já existem e somando 1, só para o
-  usuário ter uma ideia antes de salvar.
+  ==========================
+  MOSTRAR O PRÓXIMO CÓDIGO
+  ==========================
 */
 async function mostrarProximoCodigo() {
   await mostrarProximoCodigoNoCampo(
@@ -54,8 +45,6 @@ async function mostrarProximoCodigo() {
   =====================================================
   FUNÇÃO PARA CARREGAR UMA CATEGORIA PARA EDIÇÃO
   =====================================================
-  Usada quando a página é aberta com "?id=5" na URL,
-  o que acontece ao clicar em "Editar" na listagem do menu.
 */
 async function carregarCategoriaNoFormulario(idCategoria) {
   mensagem.textContent = "Carregando dados da categoria...";
@@ -92,14 +81,14 @@ async function carregarCategoriaNoFormulario(idCategoria) {
   mensagem.className = "";
 
   // Só mostra o formulário depois que ele já está preenchido com os
-  // dados da categoria, evitando o "flash" da tela de cadastro vazia.
+  // dados da categoria, evitando tela de cadastro vazia.
   document.documentElement.classList.remove("carregando-edicao");
 }
 
 /*
-  =====================================================
+  ======================
   QUANDO A PÁGINA ABRE
-  =====================================================
+  ======================
 */
 const parametrosUrl = new URLSearchParams(window.location.search);
 const idCategoriaParaEditar = parametrosUrl.get("id");
@@ -112,9 +101,9 @@ if (idCategoriaParaEditar) {
 }
 
 /*
-  =====================================================
+  ===============================
   EVENTO DE ENVIO DO FORMULÁRIO
-  =====================================================
+  ===============================
 */
 
 formCategoria.addEventListener("submit", async function (evento) {
@@ -129,11 +118,9 @@ formCategoria.addEventListener("submit", async function (evento) {
     return;
   }
 
-  /*
-    Montamos o objeto com os dados da categoria.
-    IMPORTANTE: o nome da propriedade "ds_categoria_produto"
-    precisa ser igual ao nome da coluna no Supabase.
-  */
+  
+  // Objeto com os dados da categoria.
+  
   const dadosCategoria = {
     ds_categoria_produto: descricaoCategoria
   };
@@ -191,7 +178,7 @@ formCategoria.addEventListener("submit", async function (evento) {
 
   formCategoria.reset();
 
-  // Depois de salvar, atualizamos o preview do próximo código.
+  // Depois de salvar, atualiza o preview do próximo código.
   mostrarProximoCodigo();
 
   setTimeout(() => {
@@ -199,3 +186,4 @@ formCategoria.addEventListener("submit", async function (evento) {
     mensagem.className = "";
   }, 5000);
 });
+  
