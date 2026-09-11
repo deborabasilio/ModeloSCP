@@ -498,7 +498,7 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("pesq-clientes")?.addEventListener("click", (e) => {
     e.preventDefault();
     const query =
-      "Código:clienteid, Tipo_de_Cliente:tipo_cliente, CPF_CNPJ:cpf_cnpj_cliente, Nome:nome_cliente";
+      "Código:clienteid, Tipo_de_Cliente:tipo_cliente, CPF_CNPJ:cpf_cnpj_cliente, Nome:nome_cliente, Telefone:telefone_cliente, Endereço:endereco_cliente";
     buscarDados("clientes", "Lista de Clientes", query);
   });
 
