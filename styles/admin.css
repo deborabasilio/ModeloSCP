@@ -118,6 +118,10 @@ button:hover {
   background: #1d4ed8;
 }
 
+#grupoStatusOrcamento {
+  display: contents;
+}
+
 form h3 {
   grid-column: 1 / -1;
   margin: 20px 0 4px;
