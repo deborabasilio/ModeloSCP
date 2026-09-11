@@ -249,28 +249,30 @@ document.addEventListener("DOMContentLoaded", function () {
 
       let itensAcao = "";
 
-      if (usuarioPodeEditar) {
+      if (nomeTabela === "orcamentos") {
+        if (linha.Status === "FATURADO" || !usuarioPodeEditar) {
+          itensAcao +=
+            '<button type="button" class="btn-visualizar">Visualizar</button>';
+        } else {
+          itensAcao +=
+            '<button type="button" class="btn-editar">Editar</button>';
+        }
+
+        if (linha.Status === "PENDENTE") {
+          itensAcao += `<button type="button" class="btn-aprovar">Aprovar</button>`;
+          itensAcao += `<button type="button" class="btn-reprovar">Reprovar</button>`;
+        }
+        if (linha.Status === "APROVADO" && usuarioPodeEditar) {
+          itensAcao += `<button type="button" class="btn-faturar">Faturar</button>`;
+        }
+      } else if (usuarioPodeEditar) {
         if (PAGINA_DA_TABELA[nomeTabela]) {
-        
-          if (nomeTabela === "orcamentos" && linha.Status === "FATURADO") {
-            itensAcao +=
-              '<button type="button" class="btn-visualizar">Visualizar</button>';
-          } else {
-            itensAcao +=
-              '<button type="button" class="btn-editar">Editar</button>';
-          }
+          itensAcao +=
+            '<button type="button" class="btn-editar">Editar</button>';
         }
 
         if (nomeTabela === "faturamentos") {
           itensAcao += `<button type="button" class="btn-nota-fiscal">Simular Nota Fiscal</button>`;
-        }
-
-        if (nomeTabela === "orcamentos" && linha.Status === "PENDENTE") {
-          itensAcao += `<button type="button" class="btn-aprovar">Aprovar</button>`;
-          itensAcao += `<button type="button" class="btn-reprovar">Reprovar</button>`;
-        }
-        if (nomeTabela === "orcamentos" && linha.Status === "APROVADO") {
-          itensAcao += `<button type="button" class="btn-faturar">Faturar</button>`;
         }
       }
 

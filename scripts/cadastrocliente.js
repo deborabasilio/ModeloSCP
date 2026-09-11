@@ -8,6 +8,8 @@ const codigoClienteInput = document.getElementById("codigoCliente");
 const tipoClienteInput = document.getElementById("tipoCliente");
 const cpfCnpjClienteInput = document.getElementById("cpfCnpjCliente");
 const nomeClienteInput = document.getElementById("nomeCliente");
+const telefoneClienteInput = document.getElementById("telefoneCliente");
+const enderecoClienteInput = document.getElementById("enderecoCliente");
 const mensagem = document.getElementById("mensagem");
 const botaoSalvar = document.getElementById("botao");
 
@@ -124,6 +126,8 @@ async function carregarClienteNoFormulario(idCliente) {
   );
 
   nomeClienteInput.value = cliente.nome_cliente;
+  telefoneClienteInput.value = cliente.telefone_cliente ?? "";
+  enderecoClienteInput.value = cliente.endereco_cliente ?? "";
 
   idClienteEmEdicao = cliente.clienteid;
   botaoSalvar.textContent = "Atualizar Cliente";
@@ -169,6 +173,8 @@ formCliente.addEventListener("submit", async function (evento) {
   const tipoCliente = tipoClienteInput.value;
   const cpfCnpjCliente = cpfCnpjClienteInput.value;
   const nomeCliente = nomeClienteInput.value;
+  const telefoneCliente = telefoneClienteInput.value;
+  const enderecoCliente = enderecoClienteInput.value;
 
   if (!tipoCliente) {
     mensagem.textContent = "Selecione o tipo de cliente.";
@@ -197,6 +203,8 @@ formCliente.addEventListener("submit", async function (evento) {
     tipo_cliente: tipoCliente,
     cpf_cnpj_cliente: cpfCnpjCliente,
     nome_cliente: nomeCliente,
+    telefone_cliente: telefoneCliente,
+    endereco_cliente: enderecoCliente,
   };
 
   botaoSalvar.disabled = true;
@@ -256,6 +264,8 @@ formCliente.addEventListener("submit", async function (evento) {
   mensagem.className = "sucesso";
 
   formCliente.reset();
+  telefoneClienteInput.value = "";
+  enderecoClienteInput.value = "";
   cpfCnpjClienteInput.disabled = true;
   cpfCnpjClienteInput.placeholder = "Selecione o tipo primeiro";
 

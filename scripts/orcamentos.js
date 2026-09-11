@@ -1,5 +1,3 @@
-
-
 const TABELA_ORCAMENTO = "orcamentos";
 const TABELA_ITENS = "orcamento_item";
 const TABELA_CLIENTES = "clientes";
@@ -31,6 +29,8 @@ const mensagem = document.getElementById("mensagem");
 const areaVisualizacao = document.getElementById("areaVisualizacao");
 const visCodigo = document.getElementById("visCodigo");
 const visCliente = document.getElementById("visCliente");
+const visTelefone = document.getElementById("visTelefone");
+const visEndereco = document.getElementById("visEndereco");
 const visData = document.getElementById("visData");
 const visValidade = document.getElementById("visValidade");
 const visStatus = document.getElementById("visStatus");
@@ -53,7 +53,7 @@ const botaoSalvarOrcamento = document.getElementById("botaoSalvarOrcamento");
 // =====================================================
 const sessaoOrcamento = protegerRota();
 if (sessaoOrcamento) {
-  bloquearEdicaoSemPermissao(sessaoOrcamento.podeEditar);
+  bloquearEdicaoSemPermissao(sessaoOrcamento.podeEditar, true);
 }
 
 // Converte o que foi digitado no campo de desconto (aceita "10", "10,5"
@@ -488,7 +488,7 @@ async function carregarOrcamentoParaVisualizacao(idOrcamento) {
       vl_total_orcamento,
       status_orcamento,
       vl_desconto_orcamento,
-      clientes(nome_cliente),
+      clientes(nome_cliente, telefone_cliente, endereco_cliente),
       orcamento_item(qt_produto, vl_unitario, vl_total, produtos(ds_produto))
     `,
     )
@@ -507,6 +507,8 @@ async function carregarOrcamentoParaVisualizacao(idOrcamento) {
 
   visCodigo.textContent = orcamento.orcamentoid;
   visCliente.textContent = orcamento.clientes?.nome_cliente ?? "";
+  visTelefone.textContent = orcamento.clientes?.telefone_cliente || "Não informado";
+  visEndereco.textContent = orcamento.clientes?.endereco_cliente || "Não informado";
   visData.textContent = new Date(orcamento.dt_orcamento).toLocaleString(
     "pt-BR",
   );

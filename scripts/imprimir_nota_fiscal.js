@@ -43,7 +43,7 @@ async function carregarNotaFiscal() {
     .from("orcamentos")
     .select(`
       orcamentoid,
-      clientes(nome_cliente, cpf_cnpj_cliente),
+      clientes(nome_cliente, cpf_cnpj_cliente, telefone_cliente, endereco_cliente),
       orcamento_item(qt_produto, vl_unitario, vl_total, produtos(ds_produto))
     `)
     .eq("orcamentoid", fatura.orcamentoid)
@@ -61,6 +61,8 @@ async function carregarNotaFiscal() {
   document.getElementById("doc-orcamento").textContent = orcamento.orcamentoid;
   document.getElementById("doc-cliente").textContent = orcamento.clientes?.nome_cliente || "Não informado";
   document.getElementById("doc-cpf").textContent = orcamento.clientes?.cpf_cnpj_cliente || "Não informado";
+  document.getElementById("doc-endereco").textContent = orcamento.clientes?.endereco_cliente || "Não informado";
+  document.getElementById("doc-telefone").textContent = orcamento.clientes?.telefone_cliente || "Não informado";
   
   // Verifica se a data existe antes de formatar para evitar erros
   if (fatura.dt_faturamento) {
