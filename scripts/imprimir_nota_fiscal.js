@@ -1,6 +1,3 @@
-// A conexão "supabaseClient" e as funções formatarMoeda/escapeHTML
-// agora vêm de scripts/config.js e scripts/common.js.
-
 const sessaoNotaFiscal = protegerRota();
 
 // Tradução da forma de pagamento salva no banco (código) para um texto

@@ -1,8 +1,4 @@
-// A conexão "supabaseClient" agora vem de scripts/config.js, que
-// precisa ser incluído no HTML antes deste arquivo.
 
-// Pegamos os elementos da página.
-// O campo userNome agora será usado para digitar o E-MAIL.
 const formUser = document.querySelector('#formUser');
 const tipoUser = document.querySelector('#tipoUser');
 const userNome = document.querySelector('#UserNome');
@@ -14,9 +10,7 @@ formUser.addEventListener('submit', async function (evento) {
   // Impede o recarregamento da página ao enviar o formulário.
   evento.preventDefault();
 
-  // MELHORIA: trava o botão durante a autenticação, para evitar que o
-  // usuário clique várias vezes seguidas (o que disparava vários
-  // logins/consultas ao mesmo tempo).
+  // trava o botão durante a autenticação
   botaoEntrar.disabled = true;
   mensagem.textContent = 'Autenticando...';
   mensagem.className = '';
@@ -24,7 +18,7 @@ formUser.addEventListener('submit', async function (evento) {
   const emailDigitado = userNome.value.trim();
   const senhaDigitada = userSenha.value;
 
-  // 1. FAZ O LOGIN SEGURO USANDO O SUPABASE AUTH
+  // FAZ O LOGIN SEGURO USANDO O SUPABASE AUTH
   const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
     email: emailDigitado,
     password: senhaDigitada
@@ -38,7 +32,7 @@ formUser.addEventListener('submit', async function (evento) {
     return;
   }
 
-  // 2. BUSCA AS PERMISSÕES NA SUA TABELA 'usuarios' USANDO O ID SEGURO
+  // BUSCA AS PERMISSÕES NA TABELA 'usuarios' USANDO O ID SEGURO
   const idSeguro = authData.user.id;
 
   const { data: usuarioEncontrado, error: dbError } = await supabaseClient
@@ -66,11 +60,7 @@ formUser.addEventListener('submit', async function (evento) {
     return;
   }
 
-  // Guarda os dados de perfil no navegador (incluindo as permissões).
-  // Isso é só para a INTERFACE decidir o que mostrar (botões, menus).
-  // A segurança de verdade continua sendo garantida pelas políticas de
-  // RLS no Supabase, que usam a sessão de autenticação real (authData),
-  // e não este objeto salvo no navegador.
+  // Guarda os dados de perfil no navegador
   localStorage.setItem('usuarioLogado', JSON.stringify(usuarioEncontrado));
 
   mensagem.textContent = 'Login realizado com sucesso!';

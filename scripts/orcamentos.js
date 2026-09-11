@@ -1,7 +1,4 @@
-// MELHORIA: extrairCodigoDoTexto, formatarMoeda, proteção de rota,
-// "forçar maiúsculas", escapeHTML e o botão "Voltar" agora vêm de
-// scripts/common.js. A conexão "supabaseClient" vem de scripts/config.js.
-// A função processarAprovacaoDeOrcamento vem de scripts/estoque.js.
+
 
 const TABELA_ORCAMENTO = "orcamentos";
 const TABELA_ITENS = "orcamento_item";
@@ -47,7 +44,7 @@ const btnImprimirVis = document.getElementById("btnImprimirVis"); // Botão de i
 
 let itensDoOrcamento = [];
 
-// Guarda o ID do orçamento quando estamos editando (null = cadastro novo)
+// Guarda o ID do orçamento quando esta editando (null = cadastro novo)
 let idOrcamentoEmEdicao = null;
 const botaoSalvarOrcamento = document.getElementById("botaoSalvarOrcamento");
 
@@ -135,8 +132,7 @@ async function carregarClientes() {
   });
 }
 
-// Assim que o texto digitado bate com um cliente da lista, guarda o
-// código no campo escondido e limpa o "(Código: X)" do campo visível.
+// Assim que o texto digitado bate com um cliente da lista
 clienteSelecSelect.addEventListener("input", function () {
   const codigo = extrairCodigoDoTexto(clienteSelecSelect.value);
 
@@ -180,8 +176,7 @@ async function carregarProdutos() {
   });
 }
 
-// Assim que o texto digitado bate com um produto da lista, guarda o
-// código no campo escondido e limpa o "(Código: X)" do campo visível.
+// Assim que o texto digitado bate com um produto da lista
 produtoOrcSelect.addEventListener("input", function () {
   const idProduto = extrairCodigoDoTexto(produtoOrcSelect.value);
 
@@ -264,8 +259,7 @@ function desenharListaDeItens() {
     let linhasHTML = "";
 
     itensDoOrcamento.forEach((item, indice) => {
-      // MELHORIA (XSS): a descrição do produto é escapada antes de
-      // entrar no innerHTML.
+      
       linhasHTML += `
         <tr>
           <td>${escapeHTML(item.descricao_produto)}</td>
@@ -315,10 +309,7 @@ formOrcamento.addEventListener("submit", async function (evento) {
     return;
   }
 
-  // Não deixa salvar um orçamento sem nenhum item. Sem essa checagem,
-  // dava para clicar em "Salvar" com a lista de itens vazia e o
-  // orçamento era criado com valor total R$ 0,00, o que não faz
-  // sentido comercialmente.
+  // Não deixa salvar um orçamento sem nenhum item
   if (itensDoOrcamento.length === 0) {
     mensagem.textContent =
       "Adicione pelo menos um item ao orçamento antes de salvar.";
@@ -339,7 +330,7 @@ formOrcamento.addEventListener("submit", async function (evento) {
     descontoOrcamentoInput.value,
   );
 
-  // MELHORIA: trava o botão de salvar durante o envio.
+  // trava o botão de salvar durante o envio.
   botaoSalvarOrcamento.disabled = true;
 
   // =====================================================
@@ -370,8 +361,7 @@ formOrcamento.addEventListener("submit", async function (evento) {
       return;
     }
 
-    // Substitui todos os itens antigos pelos itens atuais da tela,
-    // já que não temos como saber quais foram removidos/alterados.
+    // Substitui todos os itens antigos pelos itens atuais da tela
     const { error: erroExclusaoItens } = await supabaseClient
       .from(TABELA_ITENS)
       .delete()
@@ -582,12 +572,6 @@ async function carregarOrcamentoParaEdicao(idOrcamento) {
     return;
   }
 
-  // Um orçamento já FATURADO não pode mais ser editado: o faturamento
-  // já foi gerado e o estoque já foi descontado com base nos itens que
-  // ele tinha naquele momento — mudar os itens agora deixaria o
-  // faturamento e a nota fiscal desatualizados. PENDENTE, APROVADO e
-  // REPROVADO podem ser editados normalmente (inclusive para corrigir
-  // o status e adicionar itens que faltaram).
   if (orcamento.status_orcamento === "FATURADO") {
     alert(
       "Orçamentos já FATURADOS não podem mais ser editados. Abrindo em modo de visualização.",
@@ -599,8 +583,7 @@ async function carregarOrcamentoParaEdicao(idOrcamento) {
 
   idOrcamentoEmEdicao = orcamento.orcamentoid;
 
-  // Precisamos das listas de clientes e produtos carregadas para que os
-  // campos de busca (datalist) funcionem caso o usuário queira trocá-los.
+
   await carregarClientes();
   await carregarProdutos();
 
@@ -623,10 +606,7 @@ async function carregarOrcamentoParaEdicao(idOrcamento) {
     valor_total_item: item.vl_total,
   }));
 
-  // Preenche o desconto salvo (se a coluna vl_desconto_orcamento ainda não
-  // existir no banco, cai no "0" de forma segura). O recálculo do valor
-  // final acontece dentro de desenharListaDeItens(), então precisa vir
-  // antes dela.
+  // Preenche o desconto salvo
   descontoOrcamentoInput.value = orcamento.vl_desconto_orcamento ?? 0;
 
   statusOrcamentoSelect.value = orcamento.status_orcamento;
@@ -657,10 +637,6 @@ async function atualizarStatusOrcamento(idOrcamento, novoStatus) {
   btnAprovarOrcamento.disabled = true;
   btnReprovarOrcamento.disabled = true;
 
-  // A checagem de estoque e a baixa NÃO acontecem mais aqui na aprovação.
-  // Agora elas só acontecem no momento do faturamento (ver
-  // scripts/faturamento.js), então aprovar um orçamento só muda o status
-  // dele, sem mexer no estoque dos produtos.
 
   const { error } = await supabaseClient
     .from(TABELA_ORCAMENTO)

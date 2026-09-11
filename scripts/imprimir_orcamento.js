@@ -1,11 +1,8 @@
-// A conexão "supabaseClient" e as funções formatarMoeda/escapeHTML
-// agora vêm de scripts/config.js e scripts/common.js.
-
 const sessaoImpressao = protegerRota();
 
 // Busca e carrega os dados
 async function carregarImpressao() {
-  if (!sessaoImpressao) return; // já redirecionou para login.html
+  if (!sessaoImpressao) return; 
 
   const parametrosUrl = new URLSearchParams(window.location.search);
   const idOrcamento = parametrosUrl.get("id");
@@ -56,7 +53,7 @@ async function carregarImpressao() {
   } else {
     let linhasHTML = "";
     itens.forEach(item => {
-      // MELHORIA (XSS): descrição do produto escapada antes do innerHTML.
+      // descrição do prod
       linhasHTML += `
             <tr>
               <td>${escapeHTML(item.produtos?.ds_produto || "Produto Removido")}</td>

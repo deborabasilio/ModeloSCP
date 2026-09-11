@@ -25,10 +25,6 @@ const statusProdSelect = document.getElementById("statusProd");
 const mensagem = document.getElementById("mensagem");
 const botaoSalvar = document.getElementById("botao");
 
-// MELHORIA: extrairCodigoDoTexto, formatarMoeda, proteção de rota,
-// "forçar maiúsculas" e o botão "Voltar" agora vêm de scripts/common.js
-// (incluído no HTML antes deste arquivo), em vez de estarem copiados
-// aqui.
 
 let idProdutoEmEdicao = null;
 
@@ -56,14 +52,6 @@ dataCadastroProdInput.value = formatarDataHoraAtual();
   =====================================================
   FUNÇÕES PARA FORMATAR O VALOR DE VENDA EM REAL
   =====================================================
-  formatarValorDigitado: usada enquanto o usuário digita.
-  Trata os números digitados como se os 2 últimos fossem
-  sempre os centavos (do jeito que funciona em caixa de
-  loja / maquininha de cartão).
-
-  converterValorParaNumero: usada na hora de salvar, para
-  transformar o texto "1.234,56" de volta em um número
-  (1234.56) que o Supabase entende.
 */
 function formatarValorDigitado(valorDigitado) {
   // Remove tudo que não for número
@@ -140,10 +128,6 @@ async function carregarCategorias() {
 /*
   =====================================================
   QUANDO O USUÁRIO ESCOLHE UMA CATEGORIA NO DATALIST
-  =====================================================
-  Assim que o texto digitado bate com uma categoria da lista,
-  guardamos o código dela no campo escondido e limpamos o
-  "(Código: X)" do campo visível, para o usuário ver só o nome.
 */
 catProdSelect.addEventListener("input", function () {
   const codigo = extrairCodigoDoTexto(catProdSelect.value);
@@ -196,7 +180,7 @@ async function carregarProdutoNoFormulario(idProduto) {
   );
   qtdEstoqueProdInput.value = produto.qt_estoque_produto ?? 0;
 
-  // Se a data vier no formato ISO do banco (timestamp), convertemos para visualização
+  // Se a data vier no formato ISO do banco (timestamp), converte para visualização
   let dataVisual = produto.dt_cadastro_produto;
   if (dataVisual && dataVisual.includes("T")) {
     dataVisual = new Date(dataVisual).toLocaleString("pt-BR");
@@ -292,8 +276,7 @@ formProdutos.addEventListener("submit", async function (evento) {
     status_produto: status,
   };
 
-  // MELHORIA: trava o botão de salvar durante o envio, evitando duplo
-  // clique disparar duas gravações do mesmo produto.
+  // trava o botão de salvar durante o envio
   botaoSalvar.disabled = true;
 
   let erroSupabase = null;
@@ -361,9 +344,6 @@ formProdutos.addEventListener("submit", async function (evento) {
   =====================================================
   QUANDO A PÁGINA ABRE
   =====================================================
-  Se a página foi aberta com "?id=5" na URL (o que acontece
-  quando clicamos em "Editar" na listagem do menu), já
-  carregamos os dados desse produto no formulário.
 */
 async function iniciarPagina() {
   await carregarCategorias();

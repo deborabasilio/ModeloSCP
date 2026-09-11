@@ -2,8 +2,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // ==========================================
   // 0. VERIFICA SE O USUÁRIO ESTÁ LOGADO E QUAL É O TIPO DE ACESSO
   // ==========================================
-  // MELHORIA: essa checagem (antes copiada em cada arquivo de script)
-  // agora vem de scripts/common.js -> protegerRota().
   const sessao = protegerRota();
   if (!sessao) return; // já redirecionou para login.html
   const usuarioPodeEditar = sessao.podeEditar;
@@ -49,8 +47,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // ==========================================
   // 2. VARIÁVEIS GLOBAIS DA TELA
   // ==========================================
-  // MELHORIA: a conexão com o Supabase agora vem de scripts/config.js
-  // (window.supabaseClient), então não precisa mais ser recriada aqui.
 
   let tabelaAtual = "";
   let queryAtual = "*";
@@ -212,11 +208,7 @@ document.addEventListener("DOMContentLoaded", function () {
           if (valor === "J" || valor === "j") valor = "Jurídico";
         }
 
-        // MELHORIA (XSS): antes o valor vindo do banco era jogado direto
-        // no HTML. Agora ele passa por escapeHTML() antes de qualquer
-        // formatação, então mesmo que alguém tenha cadastrado um nome
-        // de cliente/produto com caracteres de HTML, isso é exibido como
-        // texto puro, e não interpretado pelo navegador.
+    
         let valorExibicao = escapeHTML(valor);
 
         if (coluna === "Status") {
@@ -259,10 +251,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (usuarioPodeEditar) {
         if (PAGINA_DA_TABELA[nomeTabela]) {
-          // Um orçamento FATURADO não pode mais ser editado (o faturamento e
-          // a baixa de estoque já foram feitos com base nos itens daquele
-          // momento), então mostramos "Visualizar" em vez de "Editar" só
-          // nesse caso. PENDENTE, APROVADO e REPROVADO continuam editáveis.
+        
           if (nomeTabela === "orcamentos" && linha.Status === "FATURADO") {
             itensAcao +=
               '<button type="button" class="btn-visualizar">Visualizar</button>';
@@ -302,7 +291,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ==========================================
-  // 3b. AÇÕES NA LISTAGEM: EDITAR, VISUALIZAR, EXCLUIR, APROVAR, REPROVAR, IMPRIMIR
+  // AÇÕES NA LISTAGEM: EDITAR, VISUALIZAR, EXCLUIR, APROVAR, REPROVAR, IMPRIMIR
   // ==========================================
   document
     .getElementById("tabela-corpo")
@@ -366,21 +355,12 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
 
-        // Excluir um faturamento não pode deixar o orçamento "preso" no
-        // status FATURADO sem nenhum faturamento de verdade vinculado a
-        // ele. Por isso, ao excluir um faturamento, devolvemos o
-        // orçamento relacionado para o status APROVADO, para que ele
-        // possa ser faturado novamente depois.
+      
         if (tabelaAtual === "faturamentos") {
           const idOrcamentoRelacionado = linhaClicada.dataset.orcId;
 
           if (idOrcamentoRelacionado) {
-            // MELHORIA (integridade de estoque): antes de devolver o
-            // orçamento para APROVADO, devolve o estoque que esse
-            // faturamento tinha descontado (ver scripts/estoque.js). Sem
-            // isso, o orçamento voltaria a ficar "faturável" com o
-            // estoque ainda descontado, e um novo faturamento descontaria
-            // os mesmos itens de novo.
+            
             const resultadoDevolucao = await devolverEstoqueDoOrcamento(
               supabaseClient,
               idOrcamentoRelacionado,
@@ -393,9 +373,7 @@ document.addEventListener("DOMContentLoaded", function () {
                   " Avise um administrador para conferir e corrigir o estoque manualmente antes de faturar este orçamento de novo.",
               );
               console.error(resultadoDevolucao.mensagem);
-              // Propositalmente NÃO seguimos para reverter o status nem
-              // reabilitamos o botão: o faturamento já foi excluído, então
-              // tentar de novo aqui devolveria o estoque em dobro.
+              
               return;
             }
 
@@ -433,18 +411,13 @@ document.addEventListener("DOMContentLoaded", function () {
           ? "APROVADO"
           : "REPROVADO";
 
-        // MELHORIA: trava os dois botões enquanto a aprovação está sendo
-        // processada, evitando duplo clique disparar duas aprovações do
-        // mesmo orçamento ao mesmo tempo.
+       
         const linhaBotoes = botaoClicado.closest(".menu-acoes-dropdown");
         linhaBotoes
           ?.querySelectorAll("button")
           .forEach((botao) => (botao.disabled = true));
 
-        // A checagem de estoque e a baixa NÃO acontecem mais aqui na
-        // aprovação. Agora elas só acontecem no momento do faturamento
-        // (ver scripts/faturamento.js), então aprovar um orçamento só
-        // muda o status dele, sem mexer no estoque dos produtos.
+        
 
         const { error } = await supabaseClient
           .from("orcamentos")
@@ -534,9 +507,8 @@ document.addEventListener("DOMContentLoaded", function () {
     buscarDados("categoria_produto", "Lista de Categorias", query);
   });
 
-  // ==========================================
-  // 6. PAINEL (DASHBOARD)
-  // ==========================================
+
+  // PAINEL 
   function atualizarContadorOrcamentos(spanQtdId, lista) {
     const spanQtd = document.getElementById(spanQtdId);
     if (spanQtd) spanQtd.textContent = lista.length;
@@ -584,25 +556,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
   carregarPainel();
 
-  // ==========================================
-  // 7. FUNÇÃO DE LOGOUT (SAIR)
-  // ==========================================
+
+  // FUNÇÃO DE LOGOUT 
   document
     .getElementById("btn-sair")
     ?.addEventListener("click", async function (event) {
       event.preventDefault();
-      // MELHORIA: agora também encerra a sessão real do Supabase Auth
-      // (antes só limpava o localStorage, mas a sessão do Auth em si
-      // continuava válida/guardada pela biblioteca do Supabase).
+     
       await supabaseClient.auth.signOut();
       localStorage.removeItem("usuarioLogado");
       sessionStorage.removeItem("usuarioLogado");
       window.location.href = "login.html";
     });
 
-  // ==========================================
-  // 8. CLIQUE NOS CARDS DO PAINEL (FILTRO AUTOMÁTICO)
-  // ==========================================
+
+  // CLIQUE NOS CARDS DO PAINEL
   const cardsPainel = {
     verde: "APROVADO",
     amarelo: "PENDENTE",

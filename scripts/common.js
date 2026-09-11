@@ -1,5 +1,6 @@
+// =====================================================
 // FUNÇÕES COMPARTILHADAS ENTRE TODAS AS TELAS
-
+// =====================================================
 
 /*
   =====================================================
@@ -39,7 +40,8 @@ function protegerRota() {
 }
 
 // Usada nas telas de cadastro (produtos, clientes, categorias, orçamentos):
-// se a página foi aberta em modo edição ("?id=...") e o usuário não pode editar, barra o acesso e manda de volta para o menu.
+// se a página foi aberta em modo edição ("?id=...") e o usuário não pode
+// editar, barra o acesso e manda de volta para o menu.
 function bloquearEdicaoSemPermissao(podeEditar, exigirModoEdicao = false) {
   const parametros = new URLSearchParams(window.location.search);
   const idAcesso = parametros.get("id");
@@ -65,7 +67,7 @@ function formatarMoeda(valor) {
 
 /*
   Mostra uma estimativa do próximo ID para fins de interface. O banco continua
-  sendo a fonte e gera a chave definitiva ao salvar o registro.
+  sendo a fonte de verdade e gera a chave definitiva ao salvar o registro.
 */
 async function mostrarProximoCodigoNoCampo(tabela, colunaId, campo) {
   campo.value = "Buscando...";
@@ -92,6 +94,8 @@ async function mostrarProximoCodigoNoCampo(tabela, colunaId, campo) {
   =====================================================
   3. EXTRAIR O CÓDIGO ESCONDIDO NOS CAMPOS DE DATALIST
   =====================================================
+  Os campos de busca de cliente/produto/categoria mostram o texto no
+  formato "Nome (Código: 5)". Essa função pega só o número.
 */
 function extrairCodigoDoTexto(texto) {
   const match = String(texto || "").match(/\(Código:\s*(\d+)\)\s*$/);
@@ -102,6 +106,9 @@ function extrairCodigoDoTexto(texto) {
   =====================================================
   4. ESCAPE DE HTML (proteção contra XSS armazenado)
   =====================================================
+  Sempre que um valor vindo do banco for inserido via
+  innerHTML  ele deve passar
+  por esta função antes.
 */
 function escapeHTML(texto) {
   if (texto === null || texto === undefined) return "";
@@ -117,8 +124,6 @@ function escapeHTML(texto) {
   =====================================================
   5. FORÇAR LETRAS MAIÚSCULAS NOS CAMPOS DE TEXTO
   =====================================================
-  Antes esse bloco de código (idêntico) estava colado em todo arquivo
-  de script. Agora basta chamar ativarMaiusculasAutomaticas() uma vez.
 */
 function ativarMaiusculasAutomaticas() {
   const camposTexto = document.querySelectorAll('input[type="text"], textarea');
@@ -139,15 +144,10 @@ document.addEventListener("DOMContentLoaded", ativarMaiusculasAutomaticas);
   =====================================================
   6. BOTÃO VOLTAR: FECHA A ABA EM VEZ DE NAVEGAR
   =====================================================
-  Como as telas de cadastro são sempre abertas em uma nova aba (a
-  partir do menu), "Voltar" deve fechar a aba atual e devolver o
-  usuário para a aba do menu que já estava aberta.
 */
 function voltarFechandoAba() {
   window.close();
 
-  // Se o navegador não deixar fechar (ex.: a página foi aberta
-  // digitando a URL direto, e não por um link/script), caímos de
   // volta para o menu.
   setTimeout(() => {
     window.location.href = "menu.html";

@@ -25,8 +25,7 @@ const sessaoFaturamento = protegerRota();
 const parametrosUrl = new URLSearchParams(window.location.search);
 const idOrcamento = parametrosUrl.get("id");
 
-// Vamos guardar aqui o valor total do orçamento, assim que carregarmos
-// os dados dele, para usar depois no momento de salvar.
+// valor total do orçamento, assim que carrega os dados dele, para usar depois no momento de salvar.
 let valorOrcamentoCarregado = 0;
 
 if (!idOrcamento) {
@@ -102,20 +101,10 @@ formFaturamento.addEventListener("submit", async function (evento) {
     observacao_faturamento: obsFatInput.value.trim() || null,
   };
 
-  // MELHORIA: trava o botão logo no início para evitar duplo clique
-  // gerando dois faturamentos para o mesmo orçamento.
   botaoEnviar.disabled = true;
 
-  // MELHORIA (integridade de estoque / retry seguro): o registro de
-  // faturamento é criado ANTES da baixa de estoque, não depois. Ele
-  // funciona como o "recibo" que garante o invariante "existe um
-  // faturamento para este orçamento SE E SOMENTE SE o estoque dele já
-  // foi descontado". Se a baixa (passo 2) falhar, desfazemos esse
-  // insert (passo 2b) antes de liberar uma nova tentativa — assim uma
-  // nova tentativa sempre parte do zero (nada criado, nada descontado)
-  // e nunca desconta o mesmo estoque duas vezes.
 
-  // Passo 1: insere o registro na tabela "faturamentos"
+  // insere o registro na tabela "faturamentos"
   const { data: faturamentoCriado, error: erroFaturamento } =
     await supabaseClient
       .from("faturamentos")
@@ -131,17 +120,14 @@ formFaturamento.addEventListener("submit", async function (evento) {
     return;
   }
 
-  // Passo 2: checa e desconta o estoque dos produtos do orçamento. A
-  // checagem e a baixa vêm de uma função compartilhada, em
-  // scripts/estoque.js, já protegida contra concorrência.
+  //checa e desconta o estoque dos produtos do orçamento.
   const resultadoEstoque = await processarAprovacaoDeOrcamento(
     supabaseClient,
     idOrcamento,
   );
 
   if (!resultadoEstoque.sucesso) {
-    // Passo 2b: a baixa falhou (ex.: estoque insuficiente ou conflito de
-    // concorrência) -> desfaz o faturamento criado no passo 1, para não
+    // a baixa falhou, desfaz o faturamento criado, para não
     // deixar um registro de faturamento sem a baixa correspondente.
     const { error: erroDesfazer } = await supabaseClient
       .from("faturamentos")
@@ -149,9 +135,6 @@ formFaturamento.addEventListener("submit", async function (evento) {
       .eq("faturamentoid", faturamentoCriado.faturamentoid);
 
     if (erroDesfazer) {
-      // Não conseguimos nem desfazer o insert: mais seguro travar o
-      // botão e pedir revisão manual do que arriscar duplicar o
-      // faturamento numa nova tentativa.
       mensagem.textContent =
         resultadoEstoque.mensagem +
         " Além disso, não foi possível cancelar automaticamente o registro de faturamento já criado (erro: " +
@@ -168,8 +151,7 @@ formFaturamento.addEventListener("submit", async function (evento) {
     return;
   }
 
-  // Passo 3: atualiza o status do orçamento para "FATURADO",
-  // pra ele sair da lista de "aprovados aguardando faturamento"
+  //atualiza o status do orçamento para "FATURADO",
   const { error: erroOrcamento } = await supabaseClient
     .from("orcamentos")
     .update({ status_orcamento: "FATURADO" })
@@ -181,20 +163,11 @@ formFaturamento.addEventListener("submit", async function (evento) {
       erroOrcamento.message;
     mensagem.className = "erro";
     console.error(erroOrcamento);
-    // Propositalmente NÃO reabilitamos o botão aqui: o faturamento já
-    // foi gravado, então faturar de novo criaria um registro duplicado.
+
     return;
   }
 
   mensagem.textContent = "Faturamento gerado com sucesso!";
   mensagem.className = "sucesso";
 
-  // Trava o formulário depois de faturar, já que não faz sentido
-  // faturar o mesmo orçamento de novo na mesma tela.
 });
-
-/*
-  =====================================================
-  BOTÃO VOLTAR: FECHA A ABA (vem de scripts/common.js)
-  =====================================================
-*/

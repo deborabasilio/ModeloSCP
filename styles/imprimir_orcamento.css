@@ -159,7 +159,7 @@ td.num {
   }
 }
 
-/* Aviso de que o documento é simulado: ele também aparece no PDF impresso. */
+/* Aviso de que o documento é simulado*/
 .aviso-simulacao {
   margin-bottom: 20px;
   padding: 10px 14px;
